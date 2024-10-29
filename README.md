@@ -1,18 +1,16 @@
 # GENERIC-BLOCKCHAIN
 
 ### ===Model Danych===
-  - Praca naukowa / Fragment pracy / Zmiany od poprzedniej wersji
+  - dokument jako lista modyfikacji (diffów) + podpis autora
   - txt
   - bloki zapisywane w json
-  - każda praca ma unikatowe id
 
 ### ===Model Transakcji===
   - ADD/INSERT
   - UPDATE
 
 ### ===Model Użytkownika===
- - Imię i nazwisko / PESEL
- - Autor pracy naukowej
- - Odczyt: Wszyscy / Pracownicy organizacji / Autor
+ - klucz prywatny i publiczny autora
+ - Odczyt: Wszyscy / Prawo dostępu (bonus)
 
-   Zapis: Autor/Współautorzy
+   Zapis: Autor
