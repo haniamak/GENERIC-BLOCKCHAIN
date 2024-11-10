@@ -8,6 +8,7 @@ classDiagram
     }
     class Węzeł{
         +int IP
+        +int[] listaWęzłów
         +int[] listaWpisów
         +int[] listaBloków
         +int[] listaUżytkowników
