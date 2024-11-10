@@ -2,18 +2,28 @@
 
 classDiagram
     class Blok{
-      +int klucz??
-      +int blob?
+        +int* poprzedniBlok
+        +int* następnyBlok
+        +int dane
     }
     class Węzeł{
-      +int IP
+        +int IP
+        +int[] listaWpisów
+        +int[] listaBloków
+        +int[] listaUżytkowników
     }
     class User{
-      +int id
-      +int klucz
+        +int id
+        +int klucz
     }
     class Wpis{
-      +int autor
-      +int blob
+        +int id
+        +int idAutora
+        +int dane
+        +int[] poprzedniWpis
+        +int szyfrowanie // indeks klucza??
     }
+    Węzeł <|-- Wpis
+    Węzeł <|-- User
+    Węzeł <|-- Blok
 ```
