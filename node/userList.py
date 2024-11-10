@@ -17,7 +17,7 @@ class UserList:
     else:
       print("Obiekt nie jest instancją klasy Uzytkownik.")
 
-  def wyswietl_uzytkownikow(self):
+  def showUsers(self):
         if not self.users:
             print("Lista użytkowników jest pusta.")
         else:
@@ -31,4 +31,4 @@ user_list = UserList()
 user_list.addUser(u1)
 user_list.addUser(u2)
 
-user_list.wyswietl_uzytkownikow()
+user_list.showUsers()
