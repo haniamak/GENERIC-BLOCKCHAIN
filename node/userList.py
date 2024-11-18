@@ -1,3 +1,5 @@
+import json
+
 class User:
   def __init__(self, user_id, key):
     self.user_id = user_id
@@ -18,17 +20,42 @@ class UserList:
       print("Obiekt nie jest instancją klasy Uzytkownik.")
 
   def showUsers(self):
-        if not self.users:
-            print("Lista użytkowników jest pusta.")
-        else:
-            for user in self.users:
-                print(user)
+    if not self.users:
+      print("Lista użytkowników jest pusta.")
+    else:
+      for user in self.users:
+        print(user)
+  
+  def loadUsersFromFile(self, file_path):
+    try:
+      with open(file_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+        for user_data in data:
+          if "user_id" in user_data and "key" in user_data:
+            user = User(user_id=user_data["user_id"], key=user_data["key"])
+            self.addUser(user)
+          else:
+            print(f"Pominięto niekompletny wpis: {user_data}")
+    except FileNotFoundError:
+      print(f"Plik {file_path} nie został znaleziony.")
+    except json.JSONDecodeError:
+      print(f"Plik {file_path} zawiera błędny format JSON.")
 
-u1 = User(user_id=1, key="klucz123")
-u2 = User(user_id=2, key="klucz456")
+file_path = "users.json"
+example_data = [
+    {"user_id": 1, "key": "klucz123"},
+    {"user_id": 2, "key": "klucz456"},
+    {"user_id": 3, "key": "klucz789"}
+]
+with open(file_path, "w", encoding="utf-8") as file:
+    json.dump(example_data, file, ensure_ascii=False, indent=4)
+
+u1 = User(user_id=4, key="klucz222")
+u2 = User(user_id=5, key="klucz444")
 
 user_list = UserList()
 user_list.addUser(u1)
 user_list.addUser(u2)
+user_list.loadUsersFromFile(file_path)
 
 user_list.showUsers()
