@@ -1,5 +1,6 @@
 # np. import 'blockList' from 'blockList.py'
 import nodeList
+import userList
 
 # np. blockList.initBlockList() # initialize blockList
 
@@ -20,3 +21,22 @@ rNL.fromFile(fileName)
 
 # print nodeList
 print(rNL)
+
+# create users to node
+ul = userList.UserList()
+u1 = userList.User(user_id=4, key="klucz222")
+u2 = userList.User(user_id=5, key="klucz444")
+
+# add users
+ul.addUser(u1)
+ul.addUser(u2)
+
+# save to file
+file_path = "users/users.json"
+ul.toFile(file_path)
+
+# read from file
+rUL = userList.UserList()
+rUL.fromFile(file_path)
+
+rUL.showUsers()

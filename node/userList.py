@@ -26,36 +26,27 @@ class UserList:
       for user in self.users:
         print(user)
   
-  def loadUsersFromFile(self, file_path):
+  def toJson(self):
+    return json.dumps([{'user_id': user.user_id, 'key': user.key} for user in self.users])
+  
+  def fromJson(self, jsonStr):
+      self.users = [User(user['user_id'], user['key']) for user in json.loads(jsonStr)]
+
+  def fromFile(self, file_path):
     try:
       with open(file_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-        for user_data in data:
-          if "user_id" in user_data and "key" in user_data:
-            user = User(user_id=user_data["user_id"], key=user_data["key"])
-            self.addUser(user)
-          else:
-            print(f"Pominięto niekompletny wpis: {user_data}")
+        # data = json.load(file)
+        self.fromJson(file.read())
     except FileNotFoundError:
       print(f"Plik {file_path} nie został znaleziony.")
     except json.JSONDecodeError:
       print(f"Plik {file_path} zawiera błędny format JSON.")
 
-file_path = "users.json"
-example_data = [
-    {"user_id": 1, "key": "klucz123"},
-    {"user_id": 2, "key": "klucz456"},
-    {"user_id": 3, "key": "klucz789"}
-]
-with open(file_path, "w", encoding="utf-8") as file:
-    json.dump(example_data, file, ensure_ascii=False, indent=4)
-
-u1 = User(user_id=4, key="klucz222")
-u2 = User(user_id=5, key="klucz444")
-
-user_list = UserList()
-user_list.addUser(u1)
-user_list.addUser(u2)
-user_list.loadUsersFromFile(file_path)
-
-user_list.showUsers()
+  def toFile(self, file_path):
+    try:
+      with open(file_path, "w", encoding="utf-8") as file:
+        file.write(self.toJson())
+    except FileNotFoundError:
+      print(f"Plik {file_path} nie został znaleziony.")
+    except json.JSONDecodeError:
+      print(f"Plik {file_path} zawiera błędny format JSON.")
