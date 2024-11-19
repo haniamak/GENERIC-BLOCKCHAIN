@@ -1,10 +1,39 @@
 from typing import List, Optional
+import json
 
 class Block:
     def __init__(self, data, prev_block: Optional['Block'] = None, next_block: Optional['Block'] = None):
         self.data = data
         self.prev_block = prev_block
         self.next_block = next_block
+
+
+    def save(self, filename = "block.json"):
+        def to_dict(self):
+            return {
+                'data': self.data,
+                'prev_block': self.prev_block.data if self.prev_block else None,
+                'next_block': self.next_block.data if self.next_block else None
+            }
+
+        try:
+            with open(filename, 'r') as file:
+                blocks = json.load(file)
+        except FileNotFoundError:
+            blocks = []
+
+        blocks.append(to_dict(self))
+
+        with open(filename, 'w') as file:
+            json.dump(blocks, file, indent=4)
+    
+    def read(self, filename = "block.json"):
+        try:
+            with open(filename, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print("No block file found.")
+            return []
 
     def __str__(self):
         return f"Block data: {self.data}"
@@ -35,3 +64,12 @@ class BlockList:
         text = "List of blocks: \n"
         for block in self.block_list: text += str(block) + "\n"
         return text
+
+
+    block1 = Block("Block 1")
+    block2 = Block("Block 2", prev_block=block1)
+    block1.next_block = block2
+
+    block2.save()
+
+    print(block1.read())
