@@ -1,4 +1,4 @@
-# np. import 'blockList' from 'blockList.py'
+import blockList
 import nodeList
 import userList
 
@@ -40,3 +40,12 @@ rUL = userList.UserList()
 rUL.fromFile(file_path)
 
 rUL.showUsers()
+
+# handling blocks
+block1 = blockList.Block("Block 1")
+block2 = blockList.Block("Block 2", prev_block=block1)
+block1.next_block = block2
+
+block2.save()
+
+print(block1.read())

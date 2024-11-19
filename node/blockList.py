@@ -64,12 +64,3 @@ class BlockList:
         text = "List of blocks: \n"
         for block in self.block_list: text += str(block) + "\n"
         return text
-
-
-    block1 = Block("Block 1")
-    block2 = Block("Block 2", prev_block=block1)
-    block1.next_block = block2
-
-    block2.save()
-
-    print(block1.read())
