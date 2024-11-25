@@ -30,6 +30,12 @@ def ping(sk, node):
         print("No data received")
         return False
 
+def send_signal_to_neighbors(sk, node_list, signal):
+    for node in node_list.nodes:
+        print(f"Sending {signal} to {node.ip}:{node.port}")
+        msg = signal
+        sk.sendto(msg.encode(), (node.ip, int(node.port)))
+
 # initialize nodeList
 nL = nodeList.NodeList()
 
@@ -101,6 +107,7 @@ for node in nL.nodes:
 
 print("configuration finished")
 print("Starting loop, press ESC to exit")
+send_signal_to_neighbors(sk, nL, "start")
 
 sampling_time = 2
 
@@ -119,6 +126,7 @@ try:
             last_time = current_time
         if keyboard.is_pressed('esc'):
             print("Esc pressed. Exiting loop.")
+            send_signal_to_neighbors(sk, nL, "stop")
             break
 except Exception as e:
     print(f"An error occurred: {e}")
