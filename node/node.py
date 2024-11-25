@@ -10,8 +10,8 @@ import keyboard
 nL = nodeList.NodeList()
 
 # add nodes to nodeList
-nL.addNode('100.200.300.400', '1234')
-nL.addNode('200.300.400.500', '2345')
+nL.addNode('100.200.300.400', '1234', True)
+nL.addNode('200.300.400.500', '2345', False)
 
 # save nodeList to file
 fileName = 'nodes/nodes.json'
