@@ -2,7 +2,7 @@ import blockList
 import nodeList
 import userList
 import time
-import keyboard
+from pynput import keyboard
 
 # np. blockList.initBlockList() # initialize blockList
 
@@ -52,18 +52,35 @@ block2.save()
 
 print(block1.read())
 
-try:
-  last_time = time.time()
-  while True:
+last_time = time.time()
+continue_loop = True
+
+def on_press(key):
+  try:
+    print(f'Alphanumeric key {key.char} pressed')
+  except AttributeError:
+    print(f'Special key {key} pressed')
+
+def on_release(key):
+  global continue_loop
+  if key == keyboard.Key.esc:
+    print("Esc pressed. Exiting...")
+    continue_loop = False
+    return False
+
+def main_loop():
+  global last_time
+  while continue_loop:
     current_time = time.time()
     if current_time - last_time >= 10:
-      print("Working...")
+      print("Waiting...")
       last_time = current_time
-    if keyboard.is_pressed('esc'):
-        print("Esc pressed. Exiting loop.")
-        break
-except Exception as e:
-    print(f"An error occurred: {e}")
 
+listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+listener.start()
+
+main_loop()
+
+listener.join() 
 
 print("Continuing with the program")
