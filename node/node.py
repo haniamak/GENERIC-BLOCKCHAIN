@@ -8,6 +8,28 @@ import sctp
 
 # np. blockList.initBlockList() # initialize blockList
 
+def ping(sk, node):
+    print(f"pinging {node.ip}:{node.port}")
+
+    # send ping to node
+    # wait for response
+    # return True if response received, False otherwise
+    current_time = time.time()
+    msg = "ping + " + str(current_time)
+    sk.sendto(msg.encode(), (node.ip, int(node.port)))
+    
+    try:
+        data, addr = sk.recvfrom(1024)
+        if addr[0] != node.ip or addr[1] != int(node.port):
+            print(f"Received data from unknown address: {addr}")
+        if data.decode()[:4] != "pong":
+            print(f"Received unexpected data: {data}")
+        print(f"Received data: {data}")
+        return True
+    except:
+        print("No data received")
+        return False
+
 # initialize nodeList
 nL = nodeList.NodeList()
 
@@ -19,12 +41,8 @@ nL.addNode('127.0.0.1', '10003', False)
 fileName = 'nodes/nodes.json'
 nL.toFile(fileName)
 
-# load nodeList from file
-rNL = nodeList.NodeList()
-rNL.fromFile(fileName)
-
 # print nodeList
-print(rNL)
+print(nL)
 
 # create users to node
 ul = userList.UserList()
@@ -72,7 +90,7 @@ sk.bind((server_ip, int(server_port)))
 
 print("Server started at " + server_ip + ":" + server_port)
 
-for node in rNL.nodes:
+for node in nL.nodes:
     print(f"Connecting to {node.ip}:{node.port}")
     try:
         sk.connect((node.ip, int(node.port)))
