@@ -3,6 +3,7 @@ import nodeList
 import userList
 import time
 from pynput import keyboard
+import threading
 
 # np. blockList.initBlockList() # initialize blockList
 
@@ -75,12 +76,16 @@ def main_loop():
     if current_time - last_time >= 10:
       print("Waiting...")
       last_time = current_time
+    time.sleep(1)
 
 listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+listener_thread = threading.Thread(target=listener.start)
 listener.start()
 
-main_loop()
-
-listener.join() 
+try:
+    main_loop()
+finally:
+    listener.stop()
+    listener.join()
 
 print("Continuing with the program")
