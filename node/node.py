@@ -55,6 +55,7 @@ print(block1.read())
 
 last_time = time.time()
 continue_loop = True
+lock = threading.Lock()
 
 def on_press(key):
   try:
@@ -63,15 +64,19 @@ def on_press(key):
     print(f'Special key {key} pressed')
 
 def on_release(key):
-  global continue_loop
+  global continue_loop, lock
   if key == keyboard.Key.esc:
     print("Esc pressed. Exiting...")
-    continue_loop = False
+    with lock:
+      continue_loop = False
     return False
 
 def main_loop():
-  global last_time
-  while continue_loop:
+  global last_time, continue_loop
+  while True:
+    with lock:
+      if not continue_loop:
+        break
     current_time = time.time()
     if current_time - last_time >= 10:
       print("Waiting...")
