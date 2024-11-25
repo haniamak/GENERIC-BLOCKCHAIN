@@ -1,6 +1,8 @@
 import blockList
 import nodeList
 import userList
+import time
+import keyboard
 
 # np. blockList.initBlockList() # initialize blockList
 
@@ -49,3 +51,19 @@ block1.next_block = block2
 block2.save()
 
 print(block1.read())
+
+try:
+  last_time = time.time()
+  while True:
+    current_time = time.time()
+    if current_time - last_time >= 10:
+      print("Working...")
+      last_time = current_time
+    if keyboard.is_pressed('esc'):
+        print("Esc pressed. Exiting loop.")
+        break
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+
+print("Continuing with the program")
