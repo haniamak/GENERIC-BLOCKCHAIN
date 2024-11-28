@@ -1,7 +1,9 @@
 # GENERIC-BLOCKCHAIN
 
 ### **How to run**
-first, create the python virtual environment with:
+This will not work on Windows, because Windows dosen't support pysctp.
+
+First, create the python virtual environment with:
 
 `make venv`
 
