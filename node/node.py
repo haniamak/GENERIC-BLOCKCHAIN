@@ -5,7 +5,10 @@ import time
 import keyboard
 import socket
 import sctp
+import os
 
+# set working directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # np. blockList.initBlockList() # initialize blockList
 
 def ping(sk, node):
