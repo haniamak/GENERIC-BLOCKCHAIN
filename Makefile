@@ -6,14 +6,14 @@ else
 endif
 
 venv:
-	python -m venv venv
+	python3 -m venv venv
 
 install: venv requirements.txt
-	./venv/bin/pip install -r requirements.txt
+	./venv/bin/pip3 install -r requirements.txt
 
 .PHONY: run-node
-run-node:
-	$(SUDO) ./venv/bin/python ./node/node.py
+run-node: venv install
+	$(SUDO) ./venv/bin/python3 ./node/node.py
 
 clean:
 	rm -rf venv
