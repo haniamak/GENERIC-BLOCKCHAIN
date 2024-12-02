@@ -73,13 +73,8 @@ rUL.fromFile(file_path)
 rUL.showUsers()
 
 # handling blocks
-block1 = blockList.Block("Block 1")
-block2 = blockList.Block("Block 2", prev_block=block1)
-block1.next_block = block2
-
-block2.save()
-
-print(block1.read())
+block_list = blockList.BlockList().load()
+print(block_list)
 
 server_ip = ''
 server_port = ''
