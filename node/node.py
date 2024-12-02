@@ -43,34 +43,16 @@ def send_signal_to_neighbors(sk, node_list, signal):
 nL = nodeList.NodeList()
 
 # add nodes to nodeList
-nL.addNode('127.0.0.1', '10002', True)
-nL.addNode('127.0.0.1', '10003', False)
-
-# save nodeList to file
-fileName = 'nodes/nodes.json'
-nL.toFile(fileName)
+nL.fromFile("nodes/nodes.json")
 
 # print nodeList
 print(nL)
 
 # create users to node
 ul = userList.UserList()
-u1 = userList.User(user_id=4, key="klucz222")
-u2 = userList.User(user_id=5, key="klucz444")
+ul.fromFile("users/users.json")
 
-# add users
-ul.addUser(u1)
-ul.addUser(u2)
-
-# save to file
-file_path = "users/users.json"
-ul.toFile(file_path)
-
-# read from file
-rUL = userList.UserList()
-rUL.fromFile(file_path)
-
-rUL.showUsers()
+print(ul)
 
 # handling blocks
 block_list = blockList.BlockList().load()

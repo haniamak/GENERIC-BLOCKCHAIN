@@ -12,6 +12,9 @@ class UserList:
   def __init__(self):
     self.users = []
 
+  def __str__(self):
+    return '\n'.join([str(user) for user in self.users])
+  
   def addUser(self, user):
     if isinstance(user, User):
       self.users.append(user)
