@@ -1,28 +1,53 @@
+import os
+import time
+import socket
+import sctp
+import keyboard
 import blockList
 import nodeList
 import userList
-import time
-import keyboard
-import socket
-import sctp
-import os
 
-# set working directory
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-# np. blockList.initBlockList() # initialize blockList
+def set_working_directory():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-def ping(sk, node):
-    print(f"pinging {node.ip}:{node.port}")
+def initialize_server():
+    server_ip = input("Input IP port (default = 127.0.0.1): ") or '127.0.0.1'
+    server_port = input("Input server port (default = 10001): ") or '10001'
+
+    server_socket = sctp.sctpsocket_tcp(socket.AF_INET)
+    server_socket.bind((server_ip, int(server_port)))
+
+    print(f"Server started at {server_ip}:{server_port}")
+    return server_socket
+
+def send_signal_to_neighbors(server_socket, node_list, signal):
+    for node in node_list.nodes:
+        print(f"Sending {signal} to {node.ip}:{node.port}")
+        msg = signal
+        server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
+
+def connect_to_nodes(server_socket, nodes):
+    for node in nodes:
+        print(f"Connecting to {node.ip}:{node.port}")
+        try:
+            server_socket.connect((node.ip, int(node.port)))
+            print(f"Connected to {node.ip}:{node.port}")
+        except Exception as e:
+            print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
+
+
+def ping(server_socket, node):
+    print(f"Pinging {node.ip}:{node.port}")
 
     # send ping to node
     # wait for response
     # return True if response received, False otherwise
     current_time = time.time()
     msg = "ping + " + str(current_time)
-    sk.sendto(msg.encode(), (node.ip, int(node.port)))
+    server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
     
     try:
-        data, addr = sk.recvfrom(1024)
+        data, addr = server_socket.recvfrom(1024)
         if addr[0] != node.ip or addr[1] != int(node.port):
             print(f"Received data from unknown address: {addr}")
         if data.decode()[:4] != "pong":
@@ -33,83 +58,54 @@ def ping(sk, node):
         print("No data received")
         return False
 
-def send_signal_to_neighbors(sk, node_list, signal):
-    for node in node_list.nodes:
-        print(f"Sending {signal} to {node.ip}:{node.port}")
-        msg = signal
-        sk.sendto(msg.encode(), (node.ip, int(node.port)))
 
-# initialize nodeList
-nL = nodeList.NodeList()
+def main():
+    set_working_directory()
 
-# add nodes to nodeList
-nL.fromFile("nodes/nodes.json")
+    # Initialize node, user and block lists
+    node_list = nodeList.NodeList()
+    node_list.fromFile("nodes/nodes.json")
 
-# print nodeList
-print(nL)
+    user_list = userList.UserList()
+    user_list.fromFile("users/users.json")
 
-# create users to node
-ul = userList.UserList()
-ul.fromFile("users/users.json")
+    block_list = blockList.BlockList().load()
 
-print(ul)
+    print(f"Node list: {node_list}")
+    print(f"User list: {user_list}")
+    print(f"Block list: {block_list}")
 
-# handling blocks
-block_list = blockList.BlockList().load()
-print(block_list)
+    server_socket = initialize_server()
 
-server_ip = ''
-server_port = ''
+    connect_to_nodes(server_socket, node_list.nodes)
 
-print("input server IP (default = 127.0.0.1):")
-server_ip = input()
-if server_ip == '':
-    server_ip = '127.0.0.1'
+    print("Configuration finished")
+    print("Starting loop, press ESC to exit")
+    send_signal_to_neighbors(server_socket, node_list, "START")
 
-print("input server port (default = 10001):")
-server_port = input()
-if server_port == '':
-    server_port = '10001'
+    sampling_time = 2
+    last_time = time.time()
+    
+    try:    
+        while True:
+            current_time = time.time()
+            if current_time - last_time >= sampling_time:
+                # Check if we received any data
+                try:
+                    data, addr = server_socket.recvfrom(1024)
+                    print(f"Received data from {addr}: {data}")
+                except Exception as e:
+                    print(f"No data received: {e}")
 
-sk = sctp.sctpsocket_tcp(socket.AF_INET)
-sk.bind((server_ip, int(server_port)))
-
-print("Server started at " + server_ip + ":" + server_port)
-
-for node in nL.nodes:
-    print(f"Connecting to {node.ip}:{node.port}")
-    try:
-        sk.connect((node.ip, int(node.port)))
-        print(f"Connected to {node.ip}:{node.port}")
+                last_time = current_time
+            if keyboard.is_pressed('esc'):
+                print("Esc pressed. Exiting loop.")
+                send_signal_to_neighbors(server_socket, node_list, "STOP")
+                break
     except Exception as e:
         print(f"An error occurred: {e}")
+    finally:
+        print("Program finished")
 
-
-print("configuration finished")
-print("Starting loop, press ESC to exit")
-send_signal_to_neighbors(sk, nL, "start")
-
-sampling_time = 2
-
-try:
-    last_time = time.time()
-    while True:
-        current_time = time.time()
-        if current_time - last_time >= sampling_time:
-            # check if we received any data
-            try:
-                data, addr = sk.recvfrom(1024)
-                print(f"Received data: {data}")
-            except:
-                print("No data received")
-
-            last_time = current_time
-        if keyboard.is_pressed('esc'):
-            print("Esc pressed. Exiting loop.")
-            send_signal_to_neighbors(sk, nL, "stop")
-            break
-except Exception as e:
-    print(f"An error occurred: {e}")
-
-
-print("Continuing with the program")
+if __name__ == "__main__":
+    main()
