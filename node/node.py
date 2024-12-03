@@ -71,9 +71,9 @@ def main():
 
     block_list = blockList.BlockList().load()
 
-    print(f"Node list: {node_list}")
-    print(f"User list: {user_list}")
-    print(f"Block list: {block_list}")
+    print(f"Node list:\n {node_list}")
+    print(f"User list:\n {user_list}")
+    print(f"Block list:\n {block_list}")
 
     server_socket = initialize_server()
 
