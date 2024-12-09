@@ -13,7 +13,7 @@ install: venv requirements.txt
 
 .PHONY: run-node
 run-node: venv install
-	$(SUDO) ./venv/bin/python3 ./node/node.py
+	$(SUDO) ./venv/bin/python3 ./node/node.py ./node 127.0.0.1:30000
 
 clean:
 	rm -rf venv

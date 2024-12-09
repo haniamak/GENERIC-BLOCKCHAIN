@@ -6,13 +6,21 @@ import keyboard
 import blockList
 import nodeList
 import userList
+import sys
 
-def set_working_directory():
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def initialize_server():
-    server_ip = input("Input IP port (default = 127.0.0.1): ") or '127.0.0.1'
-    server_port = input("Input server port (default = 10001): ") or '10001'
+    if len(sys.argv) == 3:
+        dir = sys.argv[1]
+        server_ip, server_port = sys.argv[2].split(':')
+
+        print(dir, server_ip, server_port)
+        os.chdir(dir)
+        print(f"Working directory: {os.getcwd()}")
+
+    else:
+        print("Usage: python node.py <path_to_working_directory> <ip:port>")
+        sys.exit(1)
 
     server_socket = sctp.sctpsocket_tcp(socket.AF_INET)
     server_socket.bind((server_ip, int(server_port)))
@@ -20,11 +28,13 @@ def initialize_server():
     print(f"Server started at {server_ip}:{server_port}")
     return server_socket
 
+
 def send_signal_to_neighbors(server_socket, node_list, signal):
     for node in node_list.nodes:
         print(f"Sending {signal} to {node.ip}:{node.port}")
         msg = signal
         server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
+
 
 def connect_to_nodes(server_socket, nodes):
     for node in nodes:
@@ -45,7 +55,7 @@ def ping(server_socket, node):
     current_time = time.time()
     msg = "ping + " + str(current_time)
     server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
-    
+
     try:
         data, addr = server_socket.recvfrom(1024)
         if addr[0] != node.ip or addr[1] != int(node.port):
@@ -60,9 +70,9 @@ def ping(server_socket, node):
 
 
 def main():
-    set_working_directory()
-
     # Initialize node, user and block lists
+    server_socket = initialize_server()
+
     node_list = nodeList.NodeList()
     node_list.fromFile("nodes/nodes.json")
 
@@ -75,8 +85,6 @@ def main():
     print(f"User list:\n {user_list}")
     print(f"Block list:\n {block_list}")
 
-    server_socket = initialize_server()
-
     connect_to_nodes(server_socket, node_list.nodes)
 
     print("Configuration finished")
@@ -85,8 +93,8 @@ def main():
 
     sampling_time = 2
     last_time = time.time()
-    
-    try:    
+
+    try:
         while True:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
@@ -106,6 +114,7 @@ def main():
         print(f"An error occurred: {e}")
     finally:
         print("Program finished")
+
 
 if __name__ == "__main__":
     main()
