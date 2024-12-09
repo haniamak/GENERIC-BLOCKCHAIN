@@ -15,22 +15,22 @@ class NodeList:
     def __init__(self):
         self.nodes = []
 
-    def addNode(self, ip, port, online=True):
+    def add_node(self, ip, port, online=True):
         self.nodes.append(Node(ip, port, online))
 
-    def removeNode(self, ip, port):
+    def remove_node(self, ip, port):
         self.nodes = [node for node in self.nodes if node.ip !=
                       ip and node.port != port]
 
     def __str__(self):
         return '\n'.join([str(node) for node in self.nodes])
 
-    def toJson(self):
+    def to_json(self):
         return json.dumps([{'ip': node.ip, 'port': node.port, 'online': node.online} for node in self.nodes])
 
-    def fromJson(self, jsonStr):
+    def from_json(self, json_str):
         self.nodes = [Node(node['ip'], node['port'], node['online'])
-                      for node in json.loads(jsonStr)]
+                      for node in json.loads(json_str)]
 
     def __iter__(self):
         return iter(self.nodes)
@@ -38,10 +38,10 @@ class NodeList:
     def __len__(self):
         return len(self.nodes)
 
-    def toFile(self, filename):
+    def to_file(self, filename):
         with open(filename, 'w') as file:
-            file.write(self.toJson())
+            file.write(self.to_json())
 
-    def fromFile(self, filename):
+    def from_file(self, filename):
         with open(filename, 'r') as file:
-            self.fromJson(file.read())
+            self.from_json(file.read())

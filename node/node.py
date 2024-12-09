@@ -113,10 +113,10 @@ def main():
     server_socket = initialize_server()
 
     node_list = nodeList.NodeList()
-    node_list.fromFile("nodes/nodes.json")
+    node_list.from_file("nodes/nodes.json")
 
     user_list = userList.UserList()
-    user_list.fromFile("users/users.json")
+    user_list.from_file("users/users.json")
 
     block_list = blockList.BlockList().load()
 
