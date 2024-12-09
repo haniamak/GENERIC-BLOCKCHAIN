@@ -52,11 +52,6 @@ def receive_file(server_socket, message, addr):
         data_str = chunk.decode()
         print(f"Received data chunk: {data_str}")
 
-
-def set_working_directory():
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-
 def initialize_server():
     if len(sys.argv) == 3:
         dir = sys.argv[1]
