@@ -44,7 +44,7 @@ def receive_file(server_socket, message, addr):
     print(f"Receiving {total_entries} entries from {addr}")
 
     for _ in range(total_entries):
-        chunk, _ = server_socket.recvfrom(1024)
+        chunk, _ = server_socket.sctp_recv(1024)
         data_str = chunk.decode()
         print(f"Received data chunk: {data_str}")
 
@@ -63,7 +63,7 @@ def initialize_server():
 
     server_socket = sctp.sctpsocket_tcp(socket.AF_INET)
     server_socket.bind((server_ip, int(server_port)))
-
+    server_socket.listen(1)
     print(f"Server started at {server_ip}:{server_port}")
     return server_socket
 
@@ -96,7 +96,7 @@ def ping(server_socket, node):
     server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
 
     try:
-        data, addr = server_socket.recvfrom(1024)
+        data, addr = server_socket.sctp_recv(1024)
         if addr[0] != node.ip or addr[1] != int(node.port):
             print(f"Received data from unknown address: {addr}")
         if data.decode()[:4] != "pong":
@@ -128,7 +128,7 @@ def main():
 
     print("Configuration finished")
     print("Starting loop, press ESC to exit")
-    send_signal_to_neighbors(server_socket, node_list, "START")
+   # send_signal_to_neighbors(server_socket, node_list, "START")
 
     sampling_time = 2
     last_time = time.time()
@@ -139,7 +139,7 @@ def main():
             if current_time - last_time >= sampling_time:
                 # Check if we received any data
                 try:
-                    data, addr = server_socket.recvfrom(1024)
+                    data, addr = server_socket.sctp_recv(1024)
                     print(f"Received data from {addr}: {data}")
                     message = data.decode()
                     if message.startswith("FILE:"):
@@ -151,7 +151,7 @@ def main():
                 last_time = current_time
             if keyboard.is_pressed('esc'):
                 print("Esc pressed. Exiting loop.")
-                send_signal_to_neighbors(server_socket, node_list, "STOP")
+               # send_signal_to_neighbors(server_socket, node_list, "STOP")
                 break
             if keyboard.is_pressed('s'):
                 print("s pressed.")
