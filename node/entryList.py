@@ -17,11 +17,20 @@ class Entry:
         self.encryption_key: int = encryption_key
     
     def __str__(self) -> str:
-        return f"Entry(entry_id={self.entry_id}, 
+        return f'''Entry(entry_id={self.entry_id},
                 author_id={self.author_id}, 
                 data={self.data}, 
                 previous_entries={self.previous_entries}, 
-                encryption_key={self.encryption_key})"
+                encryption_key={self.encryption_key})'''
+
+    def to_dict(self):
+        return {
+            'entry_id': self.entry_id,
+            'author_id': self.author_id,
+            'data': self.data,
+            'previous_entries': self.previous_entries,
+            'encryption_key': self.encryption_key
+        }
 
 class EntryList:
     def __init__(self) -> None:
@@ -40,3 +49,6 @@ class EntryList:
                 self.entries.remove(entry)
                 return True
         return False
+
+    def to_dict(self):
+        return [x.to_dict() for x in self.entries]
