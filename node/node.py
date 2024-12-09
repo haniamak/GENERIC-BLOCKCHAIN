@@ -9,6 +9,54 @@ import userList
 import sys
 
 
+def send_data(server_socket, node, entry_id, author_id, file_path):
+    try:
+        node.ip = '127.0.0.1'
+        node.port = 10002
+        print(node.ip)
+        print(node.port)
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            return
+
+        with open(file_path, "rb") as file:
+            file_data = file.read()
+
+        chunk_size = 1024
+        chunks = [file_data[i:i + chunk_size]
+                  for i in range(0, len(file_data), chunk_size)]
+        total_chunks = len(chunks)
+
+        header = f"FILE:{total_chunks}:{entry_id}:{author_id}"
+        print(f"Sending data header to {node.ip}:{node.port}: {header}")
+        server_socket.sendto(header.encode(), (node.ip, int(node.port)))
+
+        for index, chunk in enumerate(chunks):
+            server_socket.sendto(chunk, (node.ip, int(node.port)))
+            print(f"Sent chunk {index + 1}/{total_chunks}")
+
+        print(f"All {total_chunks} chunks sent successfully to {
+              node.ip}:{node.port}")
+
+    except Exception as e:
+        print(f"Error during file transmission: {e}")
+
+
+def receive_file(server_socket, message, addr):
+    _, total_entries = message.split(":")
+    total_entries = int(total_entries)
+    print(f"Receiving {total_entries} entries from {addr}")
+
+    for _ in range(total_entries):
+        chunk, _ = server_socket.recvfrom(1024)
+        data_str = chunk.decode()
+        print(f"Received data chunk: {data_str}")
+
+
+def set_working_directory():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
 def initialize_server():
     if len(sys.argv) == 3:
         dir = sys.argv[1]
@@ -102,6 +150,10 @@ def main():
                 try:
                     data, addr = server_socket.recvfrom(1024)
                     print(f"Received data from {addr}: {data}")
+                    message = data.decode()
+                    if message.startswith("FILE:"):
+                        receive_file(server_socket, message, addr)
+
                 except Exception as e:
                     print(f"No data received: {e}")
 
@@ -110,6 +162,15 @@ def main():
                 print("Esc pressed. Exiting loop.")
                 send_signal_to_neighbors(server_socket, node_list, "STOP")
                 break
+            if keyboard.is_pressed('s'):
+                print("s pressed.")
+                for i, node in enumerate(node_list.nodes):
+                    print(f"{i}: ip: {node.ip} port:{node.port}")
+                node_nr = input("Choose node number: ")[1:]
+                path = input("Path to file: ")
+                if not path == '' and not node_nr == '':
+                    send_data(server_socket,
+                              node_list.nodes[int(node_nr)], "", "", path)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:

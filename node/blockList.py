@@ -36,14 +36,14 @@ class BlockList:
             block.prev_block = last_block
         self.block_list.append(block)
 
-    def save(self, path="block.json") -> None:
+    def save(self, path="blocks/block.json") -> None:
         data = []
         for block in self.block_list:
             data.append(block.to_dict())
         with open(path, "w") as file:
             json.dump(data, file)
 
-    def load(self, path="block.json") -> None:
+    def load(self, path="blocks/block.json"):
         with open(path, 'r') as file:
             data = json.load(file)
             self.block_list = []
@@ -54,6 +54,7 @@ class BlockList:
                     self.block_list[-1].next_block = block
                 self.block_list.append(block)
                 prev = block
+        return self
 
     def __getitem__(self, index: int) -> Block:
         return self.block_list[index]
