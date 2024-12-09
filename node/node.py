@@ -7,22 +7,37 @@ import blockList
 import nodeList
 import userList
 
-def send_data(server_socket, node, entry_id, author_id, data_list):
-    total_entries = len(data_list)
-    header = f"DATA:{total_entries}"
-    print(f"Sending data header to {node.ip}:{node.port}: {header}")
-    server_socket.sendto(header.encode(), (node.ip, int(node.port)))
+def send_data(server_socket, node, entry_id, author_id, file_path):
+    try:
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            return
 
-    for data in data_list:
-        packet = data.encode()
-        server_socket.sendto(packet, (node.ip, int(node.port)))
-        print(f"Sent data packet: {data}")
+        with open(file_path, "rb") as file:
+            file_data = file.read()
 
-    print(f"All {total_entries} entries sent to {node.ip}:{node.port}")
+        chunk_size = 1024
+        chunks = [file_data[i:i + chunk_size] for i in range(0, len(file_data), chunk_size)]
+        total_chunks = len(chunks)
+
+        header = f"DATA:{total_chunks}:{entry_id}:{author_id}"
+        print(f"Sending data header to {node.ip}:{node.port}: {header}")
+        server_socket.sendto(header.encode(), (node.ip, int(node.port)))
+
+        for index, chunk in enumerate(chunks):
+            server_socket.sendto(chunk, (node.ip, int(node.port)))
+            print(f"Sent chunk {index + 1}/{total_chunks}")
+
+        print(f"All {total_chunks} chunks sent successfully to {node.ip}:{node.port}")
+
+    except Exception as e:
+        print(f"Error during file transmission: {e}")
 
 
-def receive_data(server_socket, node):
-    data, addr = server_socket.recvfrom(1024)
+def receive_data(server_socket):
+    print("elo")
+    data, addr = server_socket.recv(1024)
+    print("elo")
     message = data.decode()
 
     if message.startswith("DATA:"):
@@ -35,7 +50,6 @@ def receive_data(server_socket, node):
             data_str = chunk.decode()
             print(f"Received data chunk: {data_str}")
 
-        print(f"All entries successfully received and added to {node.entries}")
 
 
 def set_working_directory():
@@ -133,6 +147,14 @@ def main():
                 print("Esc pressed. Exiting loop.")
                 send_signal_to_neighbors(server_socket, node_list, "STOP")
                 break
+            if keyboard.is_pressed('s'):
+                print("s pressed.")
+                for i, node in enumerate(node_list.nodes):
+                    print(f"{i}: ip: {node.ip} port:{node.port}")
+                node_nr = int(input("Choose node number: ")[1:])
+                path = input("Path to file: ")
+                send_data(server_socket, node_list.nodes[node_nr], "", "", path)
+                receive_data(server_socket)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
