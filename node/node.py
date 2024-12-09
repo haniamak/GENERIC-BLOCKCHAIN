@@ -11,10 +11,6 @@ import sys
 
 def send_data(server_socket, node, entry_id, author_id, file_path):
     try:
-        node.ip = '127.0.0.1'
-        node.port = 10002
-        print(node.ip)
-        print(node.port)
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
             return
