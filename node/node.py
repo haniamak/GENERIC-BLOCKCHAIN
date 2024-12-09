@@ -7,6 +7,37 @@ import blockList
 import nodeList
 import userList
 
+def send_data(server_socket, node, entry_id, author_id, data_list):
+    total_entries = len(data_list)
+    header = f"DATA:{total_entries}"
+    print(f"Sending data header to {node.ip}:{node.port}: {header}")
+    server_socket.sendto(header.encode(), (node.ip, int(node.port)))
+
+    for data in data_list:
+        packet = data.encode()
+        server_socket.sendto(packet, (node.ip, int(node.port)))
+        print(f"Sent data packet: {data}")
+
+    print(f"All {total_entries} entries sent to {node.ip}:{node.port}")
+
+
+def receive_data(server_socket, node):
+    data, addr = server_socket.recvfrom(1024)
+    message = data.decode()
+
+    if message.startswith("DATA:"):
+        _, total_entries = message.split(":")
+        total_entries = int(total_entries)
+        print(f"Receiving {total_entries} entries from {addr}")
+
+        for _ in range(total_entries):
+            chunk, _ = server_socket.recvfrom(1024)
+            data_str = chunk.decode()
+            print(f"Received data chunk: {data_str}")
+
+        print(f"All entries successfully received and added to {node.entries}")
+
+
 def set_working_directory():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -86,7 +117,7 @@ def main():
     sampling_time = 2
     last_time = time.time()
     
-    try:    
+    try:
         while True:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
