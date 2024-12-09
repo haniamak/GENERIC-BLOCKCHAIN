@@ -9,6 +9,10 @@ import userList
 
 def send_data(server_socket, node, entry_id, author_id, file_path):
     try:
+        node.ip = '127.0.0.1'
+        node.port = 10002
+        print(node.ip)
+        print(node.port)
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
             return
@@ -149,9 +153,10 @@ def main():
                 print("s pressed.")
                 for i, node in enumerate(node_list.nodes):
                     print(f"{i}: ip: {node.ip} port:{node.port}")
-                node_nr = int(input("Choose node number: ")[1:])
+                node_nr = input("Choose node number: ")[1:]
                 path = input("Path to file: ")
-                send_data(server_socket, node_list.nodes[node_nr], "", "", path)
+                if not path == '' and not node_nr == '':
+                    send_data(server_socket, node_list.nodes[int(node_nr)], "", "", path)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
