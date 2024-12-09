@@ -20,7 +20,7 @@ def send_data(server_socket, node, entry_id, author_id, file_path):
         chunks = [file_data[i:i + chunk_size] for i in range(0, len(file_data), chunk_size)]
         total_chunks = len(chunks)
 
-        header = f"DATA:{total_chunks}:{entry_id}:{author_id}"
+        header = f"FILE:{total_chunks}:{entry_id}:{author_id}"
         print(f"Sending data header to {node.ip}:{node.port}: {header}")
         server_socket.sendto(header.encode(), (node.ip, int(node.port)))
 
@@ -34,21 +34,15 @@ def send_data(server_socket, node, entry_id, author_id, file_path):
         print(f"Error during file transmission: {e}")
 
 
-def receive_data(server_socket):
-    print("elo")
-    data, addr = server_socket.recv(1024)
-    print("elo")
-    message = data.decode()
+def receive_file(server_socket, message, addr):
+    _, total_entries = message.split(":")
+    total_entries = int(total_entries)
+    print(f"Receiving {total_entries} entries from {addr}")
 
-    if message.startswith("DATA:"):
-        _, total_entries = message.split(":")
-        total_entries = int(total_entries)
-        print(f"Receiving {total_entries} entries from {addr}")
-
-        for _ in range(total_entries):
-            chunk, _ = server_socket.recvfrom(1024)
-            data_str = chunk.decode()
-            print(f"Received data chunk: {data_str}")
+    for _ in range(total_entries):
+        chunk, _ = server_socket.recvfrom(1024)
+        data_str = chunk.decode()
+        print(f"Received data chunk: {data_str}")
 
 
 
@@ -139,6 +133,10 @@ def main():
                 try:
                     data, addr = server_socket.recvfrom(1024)
                     print(f"Received data from {addr}: {data}")
+                    message = data.decode()
+                    if message.startswith("FILE:"):
+                        receive_file(server_socket, message, addr)
+
                 except Exception as e:
                     print(f"No data received: {e}")
 
@@ -154,7 +152,6 @@ def main():
                 node_nr = int(input("Choose node number: ")[1:])
                 path = input("Path to file: ")
                 send_data(server_socket, node_list.nodes[node_nr], "", "", path)
-                receive_data(server_socket)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
