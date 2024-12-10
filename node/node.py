@@ -48,6 +48,7 @@ def receive_file(server_socket, message, addr):
         data_str = chunk.decode()
         print(f"Received data chunk: {data_str}")
 
+
 def initialize_server():
     if len(sys.argv) == 3:
         dir = sys.argv[1]
@@ -83,6 +84,28 @@ def connect_to_nodes(server_socket, nodes):
             print(f"Connected to {node.ip}:{node.port}")
         except Exception as e:
             print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
+
+
+def initiate_input():
+    if not os.path.isdir("input"):
+        os.mkdir("input")
+
+
+def check_input():
+    if len(os.listdir("input")) == 0:
+        print("No files in input directory")
+        return False
+    return True
+
+
+def send_input(server_socket, node_list):
+    for file in os.listdir("input"):
+        print(f"File input: {file}")
+
+        for node in node_list.nodes:
+            print(f"Sending {file} to {node.ip}:{node.port}")
+            send_data(server_socket, node, "", "", f"input/{file}")
+        os.remove(f"input/{file}")
 
 
 def ping(server_socket, node):
@@ -130,6 +153,8 @@ def main():
     print("Starting loop, press ESC to exit")
    # send_signal_to_neighbors(server_socket, node_list, "START")
 
+    initiate_input()
+
     sampling_time = 2
     last_time = time.time()
 
@@ -148,20 +173,15 @@ def main():
                 except Exception as e:
                     print(f"No data received: {e}")
 
+                # Check if we have any files in the input directory
+                if check_input():
+                    send_input(server_socket, node_list)
+
                 last_time = current_time
             if keyboard.is_pressed('esc'):
                 print("Esc pressed. Exiting loop.")
                # send_signal_to_neighbors(server_socket, node_list, "STOP")
                 break
-            if keyboard.is_pressed('s'):
-                print("s pressed.")
-                for i, node in enumerate(node_list.nodes):
-                    print(f"{i}: ip: {node.ip} port:{node.port}")
-                node_nr = input("Choose node number: ")[1:]
-                path = input("Path to file: ")
-                if not path == '' and not node_nr == '':
-                    send_data(server_socket,
-                              node_list.nodes[int(node_nr)], "", "", path)
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
