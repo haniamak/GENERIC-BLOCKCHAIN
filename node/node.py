@@ -2,23 +2,20 @@ import os
 import time
 import socket
 # import sctp
-# import keyboard
 import blockList
 import nodeList
 import userList
 import sys
 import random
-from pynput import keyboard
+import atexit
 
 server_ip = ""
 server_port = ""
+running = True
 
 
 def send_data(node, entry_id, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # server_socket.bind((server_ip, int(server_port)))
-    # server_socket.listen(1)
-    # server_socket.settimeout(random.randint(1, 5))
 
     try:
         server_socket.connect((node.ip, int(node.port)))
@@ -35,9 +32,9 @@ def send_data(node, entry_id, author_id, file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        # msg = f"FILE:{len(file_data)}:{entry_id}:{
-        #     author_id}:{file_data.decode()}"
-        msg = "halo halo"
+        msg = f"FILE:{len(file_data)}:{entry_id}:{
+            author_id}:{file_data.decode()}"
+        # msg = "halo halo"
         print(f"Sending data msg to {node.ip}:{node.port}")
         server_socket.send(msg.encode())
         server_socket.close()
@@ -95,24 +92,6 @@ def send_signal_to_neighbors(server_socket, node_list, signal):
         server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
 
 
-def connect_to_nodes(server_socket, nodes):
-    # unconnected_nodes = [node for node in nodes if not node.connected]
-    # try:
-    #     conn, addr = server_socket.accept()
-    #     print(f"Connection from {addr}")
-    # except:
-    #     print("No incoming connections")
-
-    for node in nodes:
-        print(f"Connecting to {node.ip}:{node.port}")
-        try:
-            server_socket.connect((node.ip, int(node.port)))
-            print(f"Connected to {node.ip}:{node.port}")
-            node.connected = True
-        except Exception as e:
-            print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
-
-
 def initiate_input():
     if not os.path.isdir("input"):
         os.mkdir("input")
@@ -134,6 +113,27 @@ def send_input(node_list):
             print(f"Sending {file} to {node.ip}:{node.port}")
             send_data(node, "", "", f"input/{file}")
         os.remove(f"input/{file}")
+
+
+def listen():
+    try:
+        server_socket = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind((server_ip, int(server_port)))
+        server_socket.listen(1)
+        server_socket.settimeout(random.randint(3, 5))
+
+        conn, addr = server_socket.accept()
+        print(f"Connection from {addr}")
+
+        data = conn.recv(1024)
+        print(f"Received data from {addr}: {data}")
+        # message = data.decode()
+        # if message.startswith("FILE:"):
+        #     receive_file(conn, message, addr)
+
+    except Exception as e:
+        print(f"No data received: {e}")
 
 
 def ping(server_socket, node):
@@ -158,21 +158,17 @@ def ping(server_socket, node):
         print("No data received")
         return False
 
-server_ip = ""
-server_port = ""
-running = True 
 
-def on_press(key):
-    global running
-    try:
-        if key == keyboard.Key.esc:
-            print("ESC pressed. Exiting loop.")
-            running = False
-    except Exception as e:
-        print(f"Error in key press handler: {e}")
+def on_exit():
+    # do cleanup
+    print("Exiting program")
+
 
 def main():
     global server_ip, server_port, running
+
+    atexit.register(on_exit)
+
     # Initialize node, user and block lists
     initialize_server()
 
@@ -191,7 +187,7 @@ def main():
     # connect_to_nodes(server_socket, node_list)
 
     print("Configuration finished")
-    print("Starting loop, press ESC to exit")
+    print("Starting loop, send SIGINT to stop (Ctrl+C)")
    # send_signal_to_neighbors(server_socket, node_list, "START")
 
     initiate_input()
@@ -199,31 +195,11 @@ def main():
     sampling_time = 2
     last_time = time.time()
 
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
-
     try:
         while running:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
-                try:
-                    server_socket = socket.socket(
-                        socket.AF_INET, socket.SOCK_STREAM)
-                    server_socket.bind((server_ip, int(server_port)))
-                    server_socket.listen(1)
-                    server_socket.settimeout(random.randint(1, 3))
-
-                    conn, addr = server_socket.accept()
-                    print(f"Connection from {addr}")
-
-                    data = conn.recv(1024)
-                    print(f"Received data from {addr}: {data}")
-                    message = data.decode()
-                    if message.startswith("FILE:"):
-                        receive_file(conn, message, addr)
-
-                except Exception as e:
-                    print(f"No data received: {e}")
+                listen()
 
                 # try to connect to all nodes
                 # connect_to_nodes(server_socket, node_list)
