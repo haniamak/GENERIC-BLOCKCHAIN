@@ -1,15 +1,31 @@
 import os
 import time
 import socket
-import sctp
-import keyboard
+# import sctp
+# import keyboard
 import blockList
 import nodeList
 import userList
 import sys
+import random
+
+server_ip = ""
+server_port = ""
 
 
-def send_data(server_socket, node, entry_id, author_id, file_path):
+def send_data(node, entry_id, author_id, file_path):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # server_socket.bind((server_ip, int(server_port)))
+    # server_socket.listen(1)
+    # server_socket.settimeout(random.randint(1, 5))
+
+    try:
+        server_socket.connect((node.ip, int(node.port)))
+        print(f"Connected to {node.ip}:{node.port}")
+    except Exception as e:
+        print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
+        return
+
     try:
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
@@ -18,21 +34,28 @@ def send_data(server_socket, node, entry_id, author_id, file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        chunk_size = 1024
-        chunks = [file_data[i:i + chunk_size]
-                  for i in range(0, len(file_data), chunk_size)]
-        total_chunks = len(chunks)
+        # msg = f"FILE:{len(file_data)}:{entry_id}:{
+        #     author_id}:{file_data.decode()}"
+        msg = "halo halo"
+        print(f"Sending data msg to {node.ip}:{node.port}")
+        server_socket.send(msg.encode())
+        server_socket.close()
+        # server_socket.send(file_data)
+        # chunk_size = 1024
+        # chunks = [file_data[i:i + chunk_size]
+        #           for i in range(0, len(file_data), chunk_size)]
+        # total_chunks = len(chunks)
 
-        header = f"FILE:{total_chunks}:{entry_id}:{author_id}"
-        print(f"Sending data header to {node.ip}:{node.port}: {header}")
-        server_socket.sendto(header.encode(), (node.ip, int(node.port)))
+        # header = f"FILE:{total_chunks}:{entry_id}:{author_id}"
+        # print(f"Sending data header to {node.ip}:{node.port}: {header}")
+        # server_socket.sendto(header.encode(), (node.ip, int(node.port)))
 
-        for index, chunk in enumerate(chunks):
-            server_socket.sendto(chunk, (node.ip, int(node.port)))
-            print(f"Sent chunk {index + 1}/{total_chunks}")
+        # for index, chunk in enumerate(chunks):
+        #     server_socket.sendto(chunk, (node.ip, int(node.port)))
+        #     print(f"Sent chunk {index + 1}/{total_chunks}")
 
-        print(f"All {total_chunks} chunks sent successfully to {
-              node.ip}:{node.port}")
+        # print(f"All {total_chunks} chunks sent successfully to {
+        #       node.ip}:{node.port}")
 
     except Exception as e:
         print(f"Error during file transmission: {e}")
@@ -50,6 +73,7 @@ def receive_file(server_socket, message, addr):
 
 
 def initialize_server():
+    global server_ip, server_port
     if len(sys.argv) == 3:
         dir = sys.argv[1]
         server_ip, server_port = sys.argv[2].split(':')
@@ -62,12 +86,6 @@ def initialize_server():
         print("Usage: python node.py <path_to_working_directory> <ip:port>")
         sys.exit(1)
 
-    server_socket = sctp.sctpsocket_tcp(socket.AF_INET)
-    server_socket.bind((server_ip, int(server_port)))
-    server_socket.listen(1)
-    print(f"Server started at {server_ip}:{server_port}")
-    return server_socket
-
 
 def send_signal_to_neighbors(server_socket, node_list, signal):
     for node in node_list.nodes:
@@ -77,8 +95,14 @@ def send_signal_to_neighbors(server_socket, node_list, signal):
 
 
 def connect_to_nodes(server_socket, nodes):
-    unconnected_nodes = [node for node in nodes if not node.connected]
-    for node in unconnected_nodes:
+    # unconnected_nodes = [node for node in nodes if not node.connected]
+    # try:
+    #     conn, addr = server_socket.accept()
+    #     print(f"Connection from {addr}")
+    # except:
+    #     print("No incoming connections")
+
+    for node in nodes:
         print(f"Connecting to {node.ip}:{node.port}")
         try:
             server_socket.connect((node.ip, int(node.port)))
@@ -100,13 +124,14 @@ def check_input():
     return True
 
 
-def send_input(server_socket, node_list):
+def send_input(node_list):
+
     for file in os.listdir("input"):
         print(f"File input: {file}")
 
         for node in node_list.nodes:
             print(f"Sending {file} to {node.ip}:{node.port}")
-            send_data(server_socket, node, "", "", f"input/{file}")
+            send_data(node, "", "", f"input/{file}")
         os.remove(f"input/{file}")
 
 
@@ -135,7 +160,7 @@ def ping(server_socket, node):
 
 def main():
     # Initialize node, user and block lists
-    server_socket = initialize_server()
+    initialize_server()
 
     node_list = nodeList.NodeList()
     node_list.from_file("nodes/nodes.json")
@@ -149,7 +174,7 @@ def main():
     print(f"User list:\n {user_list}")
     print(f"Block list:\n {block_list}")
 
-    connect_to_nodes(server_socket, node_list.nodes)
+    # connect_to_nodes(server_socket, node_list)
 
     print("Configuration finished")
     print("Starting loop, press ESC to exit")
@@ -164,29 +189,37 @@ def main():
         while True:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
-                # Check if we received any data
                 try:
-                    data, addr = server_socket.sctp_recv(1024)
+                    server_socket = socket.socket(
+                        socket.AF_INET, socket.SOCK_STREAM)
+                    server_socket.bind((server_ip, int(server_port)))
+                    server_socket.listen(1)
+                    server_socket.settimeout(random.randint(1, 3))
+
+                    conn, addr = server_socket.accept()
+                    print(f"Connection from {addr}")
+
+                    data = conn.recv(1024)
                     print(f"Received data from {addr}: {data}")
                     message = data.decode()
                     if message.startswith("FILE:"):
-                        receive_file(server_socket, message, addr)
+                        receive_file(conn, message, addr)
 
                 except Exception as e:
                     print(f"No data received: {e}")
 
                 # try to connect to all nodes
-                connect_to_nodes(server_socket, node_list.nodes)
+                # connect_to_nodes(server_socket, node_list)
 
                 # Check if we have any files in the input directory
                 if check_input():
-                    send_input(server_socket, node_list)
+                    send_input(node_list)
 
                 last_time = current_time
-            if keyboard.is_pressed('esc'):
-                print("Esc pressed. Exiting loop.")
-               # send_signal_to_neighbors(server_socket, node_list, "STOP")
-                break
+            # if keyboard.is_pressed('esc'):
+            #     print("Esc pressed. Exiting loop.")
+            #    # send_signal_to_neighbors(server_socket, node_list, "STOP")
+            #     break
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
