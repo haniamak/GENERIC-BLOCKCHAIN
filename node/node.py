@@ -77,11 +77,13 @@ def send_signal_to_neighbors(server_socket, node_list, signal):
 
 
 def connect_to_nodes(server_socket, nodes):
-    for node in nodes:
+    unconnected_nodes = [node for node in nodes if not node.connected]
+    for node in unconnected_nodes:
         print(f"Connecting to {node.ip}:{node.port}")
         try:
             server_socket.connect((node.ip, int(node.port)))
             print(f"Connected to {node.ip}:{node.port}")
+            node.connected = True
         except Exception as e:
             print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
 
@@ -172,6 +174,9 @@ def main():
 
                 except Exception as e:
                     print(f"No data received: {e}")
+
+                # try to connect to all nodes
+                connect_to_nodes(server_socket, node_list.nodes)
 
                 # Check if we have any files in the input directory
                 if check_input():

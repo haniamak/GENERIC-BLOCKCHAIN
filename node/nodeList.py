@@ -6,9 +6,10 @@ class Node:
         self.ip = ip
         self.port = port
         self.online = online
+        self.connected = False
 
     def __str__(self):
-        return self.ip + ':' + self.port + ' ' + ('online' if self.online else 'offline')
+        return self.ip + ':' + self.port + ' ' + ('online' if self.online else 'offline') + (' connected' if self.connected else '')
 
 
 class NodeList:
