@@ -46,3 +46,9 @@ class NodeList:
     def from_file(self, filename):
         with open(filename, 'r') as file:
             self.from_json(file.read())
+
+    def set_online(self, ip, port, online):
+        for node in self.nodes:
+            if node.ip == ip and node.port == port:
+                node.online = online
+                break

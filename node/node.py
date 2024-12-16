@@ -130,12 +130,21 @@ def send_input(node_list):
         print(f"File input: {file}")
 
         for node in node_list.nodes:
+            if not node.online:
+                continue
+
             print(f"Sending {file} to {node.ip}:{node.port}")
-            send_data(node, "autor", "test", f"input/{file}")
+            #send_data(node, "autor", "test", f"input/{file}")
+            sent = send_data(node, "autor", "test", f"input/{file}")
+            if sent:
+                node_list.online = True
+            else:
+                node_list.online = False
+
         os.remove(f"input/{file}")
 
 
-def listen():
+def listen(node_list):
     try:
         server_socket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
@@ -148,6 +157,10 @@ def listen():
 
         data = conn.recv(1024)
         print(f"Received data from {addr}: {data}")
+        if data[:4] == b"PING":
+            conn.send(b"pong")
+            node_list.set_online(addr[0], addr[1], True)
+            print(f"Sent pong to {addr[0]}:{addr[1]}")
         # message = data.decode()
         # if message.startswith("FILE:"):
         #     receive_file(conn, message, addr)
@@ -158,27 +171,49 @@ def listen():
         print(f"No data received: {e}")
 
 
-def ping(server_socket, node):
+def ping(node_list):
+    for node in node_list.nodes:
+        if node.online:
+            continue
+        res = pingNode(node)
+        if res:
+            node.online = True
+        else:
+            node.online = False
+
+
+def pingNode(node):
     print(f"Pinging {node.ip}:{node.port}")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        server_socket.connect((node.ip, int(node.port)))
+    except Exception as e:
+        print(f"PING[{server_ip}:{server_port}]: Failed while connecting to {
+              node.ip}:{node.port}: {e}")
+        return
 
     # send ping to node
     # wait for response
     # return True if response received, False otherwise
-    current_time = time.time()
-    msg = "ping + " + str(current_time)
-    server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
-
     try:
-        data, addr = server_socket.sctp_recv(1024)
-        if addr[0] != node.ip or addr[1] != int(node.port):
-            print(f"Received data from unknown address: {addr}")
-        if data.decode()[:4] != "pong":
-            print(f"Received unexpected data: {data}")
-        print(f"Received data: {data}")
-        return True
-    except:
-        print("No data received")
+        server_socket.send(b"PING")
+        server_socket.settimeout(3)
+        response = server_socket.recv(1024)
+        if response.decode() == "pong":
+            print(f"Received pong from {node.ip}:{node.port}")
+            return True
+        else:
+            print(f"Unexpected response: {response.decode()}")
+            return False
+    except socket.timeout:
+        print(f"Ping to {node.ip}:{node.port} timed out")
         return False
+    except Exception as e:
+        print(f"Error during ping: {e}")
+        return False
+    finally:
+        server_socket.close()
 
 
 def on_exit():
@@ -214,6 +249,9 @@ def main():
 
     initiate_input()
 
+    for node in node_list:
+        node_list.set_online(node.ip, node.port, False)
+
     sampling_time = 2
     last_time = time.time()
 
@@ -221,7 +259,9 @@ def main():
         while running:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
-                listen()
+                listen(node_list)
+                # ping offline nodes
+                ping(node_list)
 
                 # try to connect to all nodes
                 # connect_to_nodes(server_socket, node_list)
