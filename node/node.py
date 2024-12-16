@@ -8,6 +8,7 @@ import nodeList
 import userList
 import sys
 import random
+from pynput import keyboard
 
 server_ip = ""
 server_port = ""
@@ -157,8 +158,21 @@ def ping(server_socket, node):
         print("No data received")
         return False
 
+server_ip = ""
+server_port = ""
+running = True 
+
+def on_press(key):
+    global running
+    try:
+        if key == keyboard.Key.esc:
+            print("ESC pressed. Exiting loop.")
+            running = False
+    except Exception as e:
+        print(f"Error in key press handler: {e}")
 
 def main():
+    global server_ip, server_port, running
     # Initialize node, user and block lists
     initialize_server()
 
@@ -185,8 +199,11 @@ def main():
     sampling_time = 2
     last_time = time.time()
 
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+
     try:
-        while True:
+        while running:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
                 try:
