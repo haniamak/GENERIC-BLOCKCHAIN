@@ -1,0 +1,2 @@
+Received file: received_autor_test.dat, Entry ID: autor, Author ID: test, From: ('127.0.0.1', 55012)
+Received file: received_autor_test.dat, Entry ID: autor, Author ID: test, From: ('127.0.0.1', 52422)

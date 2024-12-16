@@ -22,52 +22,72 @@ def send_data(node, entry_id, author_id, file_path):
         print(f"Connected to {node.ip}:{node.port}")
     except Exception as e:
         print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
-        return
+        return False
 
     try:
         if not os.path.exists(file_path):
             print(f"File not found: {file_path}")
-            return
+            return False
 
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        msg = f"FILE:{len(file_data)}:{entry_id}:{
-            author_id}:{file_data.decode()}"
-        # msg = "halo halo"
-        print(f"Sending data msg to {node.ip}:{node.port}")
-        server_socket.send(msg.encode())
-        server_socket.close()
-        # server_socket.send(file_data)
-        # chunk_size = 1024
-        # chunks = [file_data[i:i + chunk_size]
-        #           for i in range(0, len(file_data), chunk_size)]
-        # total_chunks = len(chunks)
+        msg = f"FILE:{len(file_data)}:{entry_id}:{author_id}:" 
+        full_message = msg.encode() + file_data 
 
-        # header = f"FILE:{total_chunks}:{entry_id}:{author_id}"
-        # print(f"Sending data header to {node.ip}:{node.port}: {header}")
-        # server_socket.sendto(header.encode(), (node.ip, int(node.port)))
-
-        # for index, chunk in enumerate(chunks):
-        #     server_socket.sendto(chunk, (node.ip, int(node.port)))
-        #     print(f"Sent chunk {index + 1}/{total_chunks}")
-
-        # print(f"All {total_chunks} chunks sent successfully to {
-        #       node.ip}:{node.port}")
+        print(f"Sending file with message to {node.ip}:{node.port}")
+        server_socket.send(full_message)
 
     except Exception as e:
         print(f"Error during file transmission: {e}")
+        return False
+    finally:
+        server_socket.close()
+        return True
+
+def receive_file(data, addr):
+    try:
+        
+        # Ensure we've received data properly
+        if not data:
+            print(f"No data received from {addr}")
+            return
+        
+        message = data.decode()
+        if message.startswith("FILE:"):
+            
+            # Extract the metadata from the header
+            _, file_size, entry_id, author_id = message.split(":")[:4]
+            
+
+            file_size = int(file_size)
+            print(f"Receiving file with Entry ID: {entry_id}, Author ID: {author_id}, File size: {file_size} bytes from {addr}")
+
+            # Get the actual file data (everything after the header)
+            file_data = data[len(data) - file_size:]  # Extract the file data (after the header)
+
+            # Ensure the file data size matches the expected size
+            if len(file_data) != file_size:
+                print(f"Warning: Expected file size {file_size}, but received {len(file_data)} bytes.")
+            
+            # Save the file with a meaningful name
+            file_name = f"received_{entry_id}_{author_id}.dat"
+            with open(file_name, "wb") as file:
+                file.write(file_data)
+            print(f"File {file_name} received and saved successfully")
+
+            # Log receipt
+            with open("received_files_log.txt", "a") as log:
+                
+                log.write(f"Received file: {file_name}, Entry ID: {entry_id}, Author ID: {author_id}, From: {addr}\n")
+                log.flush()
+
+            
+
+    except Exception as e:
+        print(f"Error during file reception: {e}")
 
 
-def receive_file(server_socket, message, addr):
-    _, total_entries = message.split(":")
-    total_entries = int(total_entries)
-    print(f"Receiving {total_entries} entries from {addr}")
-
-    for _ in range(total_entries):
-        chunk, _ = server_socket.sctp_recv(1024)
-        data_str = chunk.decode()
-        print(f"Received data chunk: {data_str}")
 
 
 def initialize_server():
@@ -111,7 +131,7 @@ def send_input(node_list):
 
         for node in node_list.nodes:
             print(f"Sending {file} to {node.ip}:{node.port}")
-            send_data(node, "", "", f"input/{file}")
+            send_data(node, "autor", "test", f"input/{file}")
         os.remove(f"input/{file}")
 
 
@@ -131,6 +151,8 @@ def listen():
         # message = data.decode()
         # if message.startswith("FILE:"):
         #     receive_file(conn, message, addr)
+        if data.startswith(b"FILE:"):
+            receive_file(data, addr)
 
     except Exception as e:
         print(f"No data received: {e}")
