@@ -32,8 +32,8 @@ def send_data(node, entry_id, author_id, file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        msg = f"FILE:{len(file_data)}:{entry_id}:{author_id}:" 
-        full_message = msg.encode() + file_data 
+        msg = f"FILE:{len(file_data)}:{entry_id}:{author_id}:"
+        full_message = msg.encode() + file_data
 
         print(f"Sending file with message to {node.ip}:{node.port}")
         server_socket.send(full_message)
@@ -45,31 +45,34 @@ def send_data(node, entry_id, author_id, file_path):
         server_socket.close()
         return True
 
+
 def receive_file(data, addr):
     try:
-        
+
         # Ensure we've received data properly
         if not data:
             print(f"No data received from {addr}")
             return
-        
+
         message = data.decode()
         if message.startswith("FILE:"):
-            
+
             # Extract the metadata from the header
             _, file_size, entry_id, author_id = message.split(":")[:4]
-            
 
             file_size = int(file_size)
-            print(f"Receiving file with Entry ID: {entry_id}, Author ID: {author_id}, File size: {file_size} bytes from {addr}")
+            print(f"Receiving file with Entry ID: {entry_id}, Author ID: {
+                  author_id}, File size: {file_size} bytes from {addr}")
 
             # Get the actual file data (everything after the header)
-            file_data = data[len(data) - file_size:]  # Extract the file data (after the header)
+            # Extract the file data (after the header)
+            file_data = data[len(data) - file_size:]
 
             # Ensure the file data size matches the expected size
             if len(file_data) != file_size:
-                print(f"Warning: Expected file size {file_size}, but received {len(file_data)} bytes.")
-            
+                print(f"Warning: Expected file size {
+                      file_size}, but received {len(file_data)} bytes.")
+
             # Save the file with a meaningful name
             file_name = f"received_{entry_id}_{author_id}.dat"
             with open(file_name, "wb") as file:
@@ -78,16 +81,13 @@ def receive_file(data, addr):
 
             # Log receipt
             with open("received_files_log.txt", "a") as log:
-                
-                log.write(f"Received file: {file_name}, Entry ID: {entry_id}, Author ID: {author_id}, From: {addr}\n")
-                log.flush()
 
-            
+                log.write(f"Received file: {file_name}, Entry ID: {
+                          entry_id}, Author ID: {author_id}, From: {addr}\n")
+                log.flush()
 
     except Exception as e:
         print(f"Error during file reception: {e}")
-
-
 
 
 def initialize_server():
@@ -134,12 +134,12 @@ def send_input(node_list):
                 continue
 
             print(f"Sending {file} to {node.ip}:{node.port}")
-            #send_data(node, "autor", "test", f"input/{file}")
+            # send_data(node, "autor", "test", f"input/{file}")
             sent = send_data(node, "autor", "test", f"input/{file}")
             if sent:
-                node_list.online = True
+                node_list.set_online(node.ip, node.port, True)
             else:
-                node_list.online = False
+                node_list.set_online(node.ip, node.port, False)
 
         os.remove(f"input/{file}")
 
@@ -177,9 +177,9 @@ def ping(node_list):
             continue
         res = pingNode(node)
         if res:
-            node.online = True
+            node_list.set_online(node.ip, node.port, True)
         else:
-            node.online = False
+            node_list.set_online(node.ip, node.port, False)
 
 
 def pingNode(node):
