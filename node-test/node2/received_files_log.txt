@@ -1,2 +1,2 @@
-Received file: received_autor_test.dat, Entry ID: autor, Author ID: test, From: ('127.0.0.1', 55012)
-Received file: received_autor_test.dat, Entry ID: autor, Author ID: test, From: ('127.0.0.1', 52422)
+Received file: entries/received_4a5a9ae0-785d-4e3a-8ec8-a421dcfb57c3.json, Entry ID: 4a5a9ae0-785d-4e3a-8ec8-a421dcfb57c3, Author ID: autor, From: ('127.0.0.1', 57452)
+Received file: entries/received_d03f747e-0616-4d22-a0b4-112028f0bb2e.json, Entry ID: d03f747e-0616-4d22-a0b4-112028f0bb2e, Author ID: autor, From: ('127.0.0.1', 35010)

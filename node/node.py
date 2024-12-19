@@ -8,13 +8,15 @@ import userList
 import sys
 import random
 import atexit
+import json
+import uuid
 
 server_ip = ""
 server_port = ""
 running = True
 
 
-def send_data(node, entry_id, author_id, file_path):
+def send_data(node, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
@@ -32,6 +34,7 @@ def send_data(node, entry_id, author_id, file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
+        entry_id = uuid.uuid4()
         msg = f"FILE:{len(file_data)}:{entry_id}:{author_id}:"
         full_message = msg.encode() + file_data
 
@@ -73,11 +76,17 @@ def receive_file(data, addr):
                 print(f"Warning: Expected file size {
                       file_size}, but received {len(file_data)} bytes.")
 
-            # Save the file with a meaningful name
-            file_name = f"received_{entry_id}_{author_id}.dat"
-            with open(file_name, "wb") as file:
-                file.write(file_data)
-            print(f"File {file_name} received and saved successfully")
+            file_data = file_data.decode('utf-8')
+
+            entry_dict = {
+                "entry_id": entry_id,
+                "author_id": author_id,
+                "data": file_data
+            }
+
+            file_name = f"entries/received_{entry_id}.json"
+            with open(file_name, "w", encoding="utf-8") as f:
+                json.dump(entry_dict, f)
 
             # Log receipt
             with open("received_files_log.txt", "a") as log:
@@ -135,13 +144,14 @@ def send_input(node_list):
 
             print(f"Sending {file} to {node.ip}:{node.port}")
             # send_data(node, "autor", "test", f"input/{file}")
-            sent = send_data(node, "autor", "test", f"input/{file}")
+            # Zastanowić się gdzie trzymać autora 
+            
+            sent = send_data(node, author_id="autor", file_path=f"input/{file}")
             if sent:
                 node_list.set_online(node.ip, node.port, True)
+                os.remove(f"input/{file}")
             else:
                 node_list.set_online(node.ip, node.port, False)
-
-        os.remove(f"input/{file}")
 
 
 def listen(node_list):
