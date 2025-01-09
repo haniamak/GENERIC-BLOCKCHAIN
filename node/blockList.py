@@ -11,8 +11,18 @@ class Block:
 
     def to_dict(self):
         return {
-            'entries': self.list_of_entries.to_dict()
+            'entries': self.list_of_entries.to_dict(),
+            'prev_block': self.prev_block,
+            'next_block': self.next_block
         }
+
+    def from_dict(self, data):
+        self.list_of_entries = EntryList()
+        for entry in data["entries"]:
+            self.list_of_entries.add_entry(Entry(
+                entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
+        self.prev_block = data["prev_block"]
+        self.next_block = data["next_block"]
 
     def __str__(self):
         return f"Block data: {self.list_of_entries.to_dict()}"

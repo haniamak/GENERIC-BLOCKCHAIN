@@ -151,7 +151,13 @@ def receive_file(data, addr, block_list):
         elif message.startswith("BLOCK:"):
             # TODO
             # Trzeba dodać zajmowanie się blokami - zapisać oraz zaktualizować odpowiednio strukturę blockList
-            print(message)
+            # print(message)
+            block_data = message[message.find(":", message.find(":")+1):]
+            block_dict = json.loads(block_data)
+            block = blockList.Block.from_dict(block_dict)
+            block_list.add_block(block)
+            print(f"Received block: {block}")
+
 
     except Exception as e:
         print(f"Error during file reception: {e}")
@@ -224,6 +230,7 @@ def listen(node_list, block_list):
     try:
         server_socket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((server_ip, int(server_port)))
         server_socket.listen(1)
         server_socket.settimeout(random.randint(3, 5))
