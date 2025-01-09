@@ -4,15 +4,18 @@ import socket
 import blockList
 import nodeList
 import userList
+import entryList
 import sys
 import random
 import atexit
 import json
 import uuid
 
+
 server_ip = ""
 server_port = ""
 running = True
+limit_of_entries = 3
 
 def send_latest_block_to_neighbors(node_list, block_list):
     if not block_list.is_empty():
@@ -66,8 +69,29 @@ def send_entry(node, author_id, file_path):
         server_socket.close()
         return True
 
+def create_block(block_list):
+    entries_directory = "entries/"
+    list_of_entries = entryList.EntryList()
+    entries_id = []
+    for filename in os.listdir(entries_directory)[:3]:
+        file_path = os.path.join(entries_directory, filename)
+        with open(file_path, "r", encoding="utf-8") as f:
+            loaded_data = json.load(f)
+            entry = entryList.Entry(loaded_data["entry_id"], loaded_data["author_id"], loaded_data["data"])
+            list_of_entries.add_entry(entry)
+            entries_id.append(loaded_data["entry_id"])
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
-def receive_file(data, addr):
+    block = blockList.Block(list_of_entries)
+    block_list.add_block(block)
+
+##    to save block_list in block.json
+##    block_list.save()
+
+    print(f"New Block created with {entries_id} entries")
+
+def receive_file(data, addr, block_list):
     try:
         # Ensure we've received data properly
         if not data:
@@ -109,6 +133,12 @@ def receive_file(data, addr):
                 log.write(f"Received file: {file_name}, Entry ID: {
                           entry_id}, Author ID: {author_id}, From: {addr}\n")
                 log.flush()
+
+            ## Check limit of entries in one block
+            entries_directory = "entries/"
+            num_entries = len(os.listdir(entries_directory))
+            if num_entries >= limit_of_entries:
+                create_block(block_list)
 
         elif message.startswith("BLOCK:"):
             # TODO
@@ -173,7 +203,7 @@ def send_input(node_list):
                 node_list.set_online(node.ip, node.port, False)
 
 
-def listen(node_list):
+def listen(node_list, block_list):
     try:
         server_socket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
@@ -192,7 +222,7 @@ def listen(node_list):
             print(f"Sent pong to {addr[0]}:{addr[1]}")
 
         if data.startswith(b"ENTRY:") or data.startswith(b"BLOCK:"):
-            receive_file(data, addr)
+            receive_file(data, addr, block_list)
 
     except Exception as e:
         print(f"No data received: {e}")
@@ -284,7 +314,7 @@ def main():
         while running:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
-                listen(node_list)
+                listen(node_list, block_list)
                 # ping offline nodes
                 ping(node_list)
 
