@@ -1,22 +1,44 @@
 import os
 import time
 import socket
-# import sctp
 import blockList
 import nodeList
 import userList
+import entryList
 import sys
 import random
 import atexit
 import json
 import uuid
 
+from node.entryList import EntryList
+
 server_ip = ""
 server_port = ""
 running = True
+limit_of_entries = 3
+
+def send_latest_block_to_neighbors(node_list, block_list):
+    if not block_list.is_empty():
+        latest_block = block_list[-1] # To można zmienić, na dowolny blok, lub listę  bloków
+        for node in node_list.nodes:
+            if node.online and node.send_block:
+                try:
+                    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    server_socket.connect((node.ip, int(node.port)))
+
+                    block_data = json.dumps(latest_block.to_dict()).encode()
+                    message = f"BLOCK:{len(block_data)}:".encode() + block_data
+
+                    server_socket.send(message)
+                    server_socket.close()
+                    print(f"Sent latest block to {node.ip}:{node.port}")
+                    node.send_block = False
+                except Exception as e:
+                    print(f"Failed to send block to {node.ip}:{node.port}: {e}")
 
 
-def send_data(node, author_id, file_path):
+def send_entry(node, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
@@ -35,7 +57,7 @@ def send_data(node, author_id, file_path):
             file_data = file.read()
 
         entry_id = uuid.uuid4()
-        msg = f"FILE:{len(file_data)}:{entry_id}:{author_id}:"
+        msg = f"ENTRY:{len(file_data)}:{entry_id}:{author_id}:"
         full_message = msg.encode() + file_data
 
         print(f"Sending file with message to {node.ip}:{node.port}")
@@ -48,18 +70,31 @@ def send_data(node, author_id, file_path):
         server_socket.close()
         return True
 
+def create_block(block_list):
+    entries_directory = "entries/"
+    list_of_entries = EntryList()
 
-def receive_file(data, addr):
+    for filename in os.listdir(entries_directory)[:3]:
+        file_path = os.path.join(entries_directory, filename)
+        with open(file_path, "r", encoding="utf-8") as f:
+            loaded_data = json.load(f)
+            entry = entryList.Entry(loaded_data["entry_id"], loaded_data["author_id"], loaded_data["data"])
+            list_of_entries.add_entry(entry)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    block = blockList.Block(list_of_entries)
+    block_list.add_block(block)
+
+def receive_file(data, addr, block_list):
     try:
-
         # Ensure we've received data properly
         if not data:
             print(f"No data received from {addr}")
             return
 
         message = data.decode()
-        if message.startswith("FILE:"):
-
+        if message.startswith("ENTRY:"):
             # Extract the metadata from the header
             _, file_size, entry_id, author_id = message.split(":")[:4]
 
@@ -90,11 +125,21 @@ def receive_file(data, addr):
 
             # Log receipt
             with open("received_files_log.txt", "a") as log:
-
                 log.write(f"Received file: {file_name}, Entry ID: {
                           entry_id}, Author ID: {author_id}, From: {addr}\n")
                 log.flush()
 
+            ## Check limit of entries in one block
+            entries_directory = "entries/"
+            num_entries = len(os.listdir(entries_directory))
+            if num_entries >= limit_of_entries:
+                create_block(block_list)
+
+        elif message.startswith("BLOCK:"):
+            # TODO
+            # Trzeba dodać zajmowanie się blokami - zapisać oraz zaktualizować odpowiednio strukturę blockList
+            print(message)
+   
     except Exception as e:
         print(f"Error during file reception: {e}")
 
@@ -134,7 +179,6 @@ def check_input():
 
 
 def send_input(node_list):
-
     for file in os.listdir("input"):
         print(f"File input: {file}")
 
@@ -146,7 +190,7 @@ def send_input(node_list):
             # send_data(node, "autor", "test", f"input/{file}")
             # Zastanowić się gdzie trzymać autora 
             
-            sent = send_data(node, author_id="autor", file_path=f"input/{file}")
+            sent = send_entry(node, author_id="autor", file_path=f"input/{file}")
             if sent:
                 node_list.set_online(node.ip, node.port, True)
                 os.remove(f"input/{file}")
@@ -154,7 +198,7 @@ def send_input(node_list):
                 node_list.set_online(node.ip, node.port, False)
 
 
-def listen(node_list):
+def listen(node_list, block_list):
     try:
         server_socket = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM)
@@ -171,11 +215,9 @@ def listen(node_list):
             conn.send(b"pong")
             node_list.set_online(addr[0], addr[1], True)
             print(f"Sent pong to {addr[0]}:{addr[1]}")
-        # message = data.decode()
-        # if message.startswith("FILE:"):
-        #     receive_file(conn, message, addr)
-        if data.startswith(b"FILE:"):
-            receive_file(data, addr)
+
+        if data.startswith(b"ENTRY:") or data.startswith(b"BLOCK:"):
+            receive_file(data, addr, block_list)
 
     except Exception as e:
         print(f"No data received: {e}")
@@ -251,8 +293,6 @@ def main():
     print(f"User list:\n {user_list}")
     print(f"Block list:\n {block_list}")
 
-    # connect_to_nodes(server_socket, node_list)
-
     print("Configuration finished")
     print("Starting loop, send SIGINT to stop (Ctrl+C)")
    # send_signal_to_neighbors(server_socket, node_list, "START")
@@ -269,22 +309,18 @@ def main():
         while running:
             current_time = time.time()
             if current_time - last_time >= sampling_time:
-                listen(node_list)
+                listen(node_list, block_list)
                 # ping offline nodes
                 ping(node_list)
-
-                # try to connect to all nodes
-                # connect_to_nodes(server_socket, node_list)
 
                 # Check if we have any files in the input directory
                 if check_input():
                     send_input(node_list)
 
+                send_latest_block_to_neighbors(node_list, block_list)
+
                 last_time = current_time
-            # if keyboard.is_pressed('esc'):
-            #     print("Esc pressed. Exiting loop.")
-            #    # send_signal_to_neighbors(server_socket, node_list, "STOP")
-            #     break
+          
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
