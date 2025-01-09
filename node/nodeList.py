@@ -7,6 +7,7 @@ class Node:
         self.port = port
         self.online = online
         self.connected = False
+        self.send_block = False # Flag to determine whether to send block or not
 
     def __str__(self):
         return self.ip + ':' + self.port + ' ' + ('online' if self.online else 'offline') + (' connected' if self.connected else '')
