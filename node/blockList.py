@@ -43,15 +43,21 @@ class BlockList:
     def is_empty(self) -> bool:
         return not bool(self.block_list)
 
-    def add_block(self, block: Block) -> None:
+    def add_block(self, block: Block) -> bool:
         if block.next_block is not None:
             raise TypeError("Block has defined next element - should be None")
 
         if self.block_list:
             last_block = self.block_list[-1]
+
+            if block.prev_block is None:
+                return False
+            if hash(last_block) != block.prev_block:
+                return False
+
             last_block.next_block = hash(block)
-            block.prev_block = hash(last_block)
         self.block_list.append(block)
+        return True
 
     def save(self, path="blocks/block.json") -> None:
         data = []
@@ -87,3 +93,6 @@ class BlockList:
         for block in self.block_list:
             text += str(block) + "\n"
         return text
+
+    def __len__(self) -> int:
+        return len(self.block_list)

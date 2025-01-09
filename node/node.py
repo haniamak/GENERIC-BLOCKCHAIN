@@ -156,7 +156,28 @@ def receive_file(data, addr, block_list):
             block_data = message[message.find(":", message.find(":")+1):]
             block_dict = json.loads(block_data)
             block = blockList.Block.from_dict(block_dict)
-            block_list.add_block(block)
+            if not block_list.add_block(block):
+                # konflikt bloków
+                if block.prev_block is None:
+                    # jest to pierwszy blok albo błędny blok
+                    if len(block_list) > 1:
+                        # jeśli był to pierwszy blok to i tak już mamy więcej
+                        print("dropped incoming block")
+                    else:
+                        # rozgałęźenie
+                        print("fork detected")
+                else:
+                    if len(block_list) < 2:
+                        # nie mamy poprzedniego bloku
+                        print("dropped incoming block")
+
+                    elif block.prev_block == hash(block_list[-2]):
+                        # rozgałęźenie
+                        print("fork detected")
+
+                    else:
+                        # blok jest niepoprawny lub rozgałęźenie jest krótsze
+                        print("dropped incoming block")
             print(f"Received block: {block}")
 
     except Exception as e:
