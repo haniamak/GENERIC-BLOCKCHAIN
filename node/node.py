@@ -362,8 +362,8 @@ def main():
         if not temporary_dir:
             print("Saving data")
             block_list.save()
-            node_list.save()
-            user_list.save()
+            node_list.to_file("nodes/nodes.json")
+            user_list.to_file("users/users.json")
 
         print("Block list:")
         print(block_list)
