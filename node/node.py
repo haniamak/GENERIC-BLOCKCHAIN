@@ -79,7 +79,7 @@ def create_block(block_list):
     entries_directory = "entries/"
     list_of_entries = entryList.EntryList()
     entries_id = []
-    for filename in os.listdir(entries_directory)[:3]:
+    for filename in os.listdir(entries_directory)[:limit_of_entries]:
         file_path = os.path.join(entries_directory, filename)
         with open(file_path, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)
