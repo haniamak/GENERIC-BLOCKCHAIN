@@ -16,6 +16,7 @@ server_ip = ""
 server_port = ""
 running = True
 limit_of_entries = 3
+temporary_dir = False
 
 
 def send_latest_block_to_neighbors(node_list, block_list):
@@ -158,21 +159,23 @@ def receive_file(data, addr, block_list):
             block_list.add_block(block)
             print(f"Received block: {block}")
 
-
     except Exception as e:
         print(f"Error during file reception: {e}")
 
 
 def initialize_server():
-    global server_ip, server_port
+    global server_ip, server_port, temporary_dir
 
-    if len(sys.argv) == 3:
+    if len(sys.argv) >= 3:
         dir = sys.argv[1]
         server_ip, server_port = sys.argv[2].split(':')
 
         print(dir, server_ip, server_port)
         os.chdir(dir)
         print(f"Working directory: {os.getcwd()}")
+
+        if len(sys.argv) == 4 and sys.argv[3] == "--temporary":
+            temporary_dir = True
 
     else:
         print("Usage: python node.py <path_to_working_directory> <ip:port>")
@@ -299,6 +302,8 @@ def pingNode(node):
 
 def on_exit():
     # do cleanup
+    global running
+    running = False
     print("Exiting program")
 
 
@@ -354,6 +359,21 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
+        if not temporary_dir:
+            print("Saving data")
+            block_list.save()
+            node_list.save()
+            user_list.save()
+
+        print("Block list:")
+        print(block_list)
+        print("Entries list:")
+        print(os.listdir("entries"))
+        print("Node list:")
+        print(node_list)
+        print("User list:")
+        print(user_list)
+
         print("Program finished")
 
 
