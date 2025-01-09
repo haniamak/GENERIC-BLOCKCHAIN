@@ -11,7 +11,6 @@ import atexit
 import json
 import uuid
 
-from node.entryList import EntryList
 
 server_ip = ""
 server_port = ""
@@ -72,19 +71,25 @@ def send_entry(node, author_id, file_path):
 
 def create_block(block_list):
     entries_directory = "entries/"
-    list_of_entries = EntryList()
-
+    list_of_entries = entryList.EntryList()
+    entries_id = []
     for filename in os.listdir(entries_directory)[:3]:
         file_path = os.path.join(entries_directory, filename)
         with open(file_path, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)
             entry = entryList.Entry(loaded_data["entry_id"], loaded_data["author_id"], loaded_data["data"])
             list_of_entries.add_entry(entry)
+            entries_id.append(loaded_data["entry_id"])
         if os.path.exists(file_path):
             os.remove(file_path)
 
     block = blockList.Block(list_of_entries)
     block_list.add_block(block)
+
+##    to save block_list in block.json
+##    block_list.save()
+
+    print(f"New Block created with {entries_id} entries")
 
 def receive_file(data, addr, block_list):
     try:
