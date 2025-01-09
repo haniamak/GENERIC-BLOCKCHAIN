@@ -4,7 +4,7 @@ import json
 
 
 class Block:
-    def __init__(self, list_of_entries: Optional['EntryList'] = None, prev_block: Optional['Block'] = None, next_block: Optional['Block'] = None):
+    def __init__(self, list_of_entries: Optional['EntryList'] = None, prev_block=None, next_block=None):
         self.list_of_entries = list_of_entries
         self.prev_block = prev_block
         self.next_block = next_block
@@ -16,6 +16,12 @@ class Block:
 
     def __str__(self):
         return f"Block data: {self.list_of_entries.to_dict()}"
+
+    def __hash__(self):
+        return hash(self.__str__())
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class BlockList:
@@ -33,8 +39,8 @@ class BlockList:
 
         if self.block_list:
             last_block = self.block_list[-1]
-            last_block.next_block = block
-            block.prev_block = last_block
+            last_block.next_block = hash(block)
+            block.prev_block = hash(last_block)
         self.block_list.append(block)
 
     def save(self, path="blocks/block.json") -> None:
@@ -52,11 +58,13 @@ class BlockList:
             for block_data in data:
                 list_of_entries = EntryList()
                 for entry in block_data["entries"]:
-                    list_of_entries.add_entry(Entry(entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
-                block = Block(list_of_entries = list_of_entries, prev_block=prev)
+                    list_of_entries.add_entry(Entry(
+                        entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
+                block = Block(list_of_entries=list_of_entries,
+                              prev_block=hash(prev))
 
                 if len(self.block_list) != 0:
-                    self.block_list[-1].next_block = block
+                    self.block_list[-1].next_block = hash(block)
                 self.block_list.append(block)
                 prev = block
         return self
@@ -66,7 +74,6 @@ class BlockList:
 
     def __str__(self) -> str:
         text = "List of blocks: \n"
-        for block in self.block_list: text += str(block) + "\n"
+        for block in self.block_list:
+            text += str(block) + "\n"
         return text
-
-

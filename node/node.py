@@ -17,13 +17,16 @@ server_port = ""
 running = True
 limit_of_entries = 3
 
+
 def send_latest_block_to_neighbors(node_list, block_list):
     if not block_list.is_empty():
-        latest_block = block_list[-1] # To można zmienić, na dowolny blok, lub listę  bloków
+        # To można zmienić, na dowolny blok, lub listę  bloków
+        latest_block = block_list[-1]
         for node in node_list.nodes:
-            if node.online and node.send_block:
+            if node.online:
                 try:
-                    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    server_socket = socket.socket(
+                        socket.AF_INET, socket.SOCK_STREAM)
                     server_socket.connect((node.ip, int(node.port)))
 
                     block_data = json.dumps(latest_block.to_dict()).encode()
@@ -34,7 +37,8 @@ def send_latest_block_to_neighbors(node_list, block_list):
                     print(f"Sent latest block to {node.ip}:{node.port}")
                     node.send_block = False
                 except Exception as e:
-                    print(f"Failed to send block to {node.ip}:{node.port}: {e}")
+                    print(f"Failed to send block to {
+                          node.ip}:{node.port}: {e}")
 
 
 def send_entry(node, author_id, file_path):
@@ -69,6 +73,7 @@ def send_entry(node, author_id, file_path):
         server_socket.close()
         return True
 
+
 def create_block(block_list):
     entries_directory = "entries/"
     list_of_entries = entryList.EntryList()
@@ -77,7 +82,8 @@ def create_block(block_list):
         file_path = os.path.join(entries_directory, filename)
         with open(file_path, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)
-            entry = entryList.Entry(loaded_data["entry_id"], loaded_data["author_id"], loaded_data["data"])
+            entry = entryList.Entry(
+                loaded_data["entry_id"], loaded_data["author_id"], loaded_data["data"])
             list_of_entries.add_entry(entry)
             entries_id.append(loaded_data["entry_id"])
         if os.path.exists(file_path):
@@ -86,10 +92,11 @@ def create_block(block_list):
     block = blockList.Block(list_of_entries)
     block_list.add_block(block)
 
-##    to save block_list in block.json
-##    block_list.save()
+# to save block_list in block.json
+# block_list.save()
 
     print(f"New Block created with {entries_id} entries")
+
 
 def receive_file(data, addr, block_list):
     try:
@@ -134,23 +141,25 @@ def receive_file(data, addr, block_list):
                           entry_id}, Author ID: {author_id}, From: {addr}\n")
                 log.flush()
 
-            ## Check limit of entries in one block
-            entries_directory = "entries/"
-            num_entries = len(os.listdir(entries_directory))
-            if num_entries >= limit_of_entries:
-                create_block(block_list)
+            # Check limit of entries in one block
+            # entries_directory = "entries/"
+            # num_entries = len(os.listdir(entries_directory))
+            # if num_entries >= limit_of_entries:
+            #     create_block(block_list)
+            #     send_latest_block_to_neighbors(node_list, block_list)
 
         elif message.startswith("BLOCK:"):
             # TODO
             # Trzeba dodać zajmowanie się blokami - zapisać oraz zaktualizować odpowiednio strukturę blockList
             print(message)
-   
+
     except Exception as e:
         print(f"Error during file reception: {e}")
 
 
 def initialize_server():
     global server_ip, server_port
+
     if len(sys.argv) == 3:
         dir = sys.argv[1]
         server_ip, server_port = sys.argv[2].split(':')
@@ -163,17 +172,24 @@ def initialize_server():
         print("Usage: python node.py <path_to_working_directory> <ip:port>")
         sys.exit(1)
 
+    # Create directories for everything
+    if not os.path.isdir("blocks"):
+        os.mkdir("blocks")
+    if not os.path.isdir("entries"):
+        os.mkdir("entries")
+    if not os.path.isdir("nodes"):
+        os.mkdir("nodes")
+    if not os.path.isdir("users"):
+        os.mkdir("users")
+    if not os.path.isdir("input"):
+        os.mkdir("input")
+
 
 def send_signal_to_neighbors(server_socket, node_list, signal):
     for node in node_list.nodes:
         print(f"Sending {signal} to {node.ip}:{node.port}")
         msg = signal
         server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
-
-
-def initiate_input():
-    if not os.path.isdir("input"):
-        os.mkdir("input")
 
 
 def check_input():
@@ -193,9 +209,10 @@ def send_input(node_list):
 
             print(f"Sending {file} to {node.ip}:{node.port}")
             # send_data(node, "autor", "test", f"input/{file}")
-            # Zastanowić się gdzie trzymać autora 
-            
-            sent = send_entry(node, author_id="autor", file_path=f"input/{file}")
+            # Zastanowić się gdzie trzymać autora
+
+            sent = send_entry(node, author_id="autor",
+                              file_path=f"input/{file}")
             if sent:
                 node_list.set_online(node.ip, node.port, True)
                 os.remove(f"input/{file}")
@@ -255,7 +272,7 @@ def pingNode(node):
     # return True if response received, False otherwise
     try:
         server_socket.send(b"PING")
-        server_socket.settimeout(3)
+        server_socket.settimeout(random.randint(3, 5))
         response = server_socket.recv(1024)
         if response.decode() == "pong":
             print(f"Received pong from {node.ip}:{node.port}")
@@ -302,8 +319,6 @@ def main():
     print("Starting loop, send SIGINT to stop (Ctrl+C)")
    # send_signal_to_neighbors(server_socket, node_list, "START")
 
-    initiate_input()
-
     for node in node_list:
         node_list.set_online(node.ip, node.port, False)
 
@@ -322,10 +337,13 @@ def main():
                 if check_input():
                     send_input(node_list)
 
-                send_latest_block_to_neighbors(node_list, block_list)
+                # Check if we have enough entries to create a block
+                if len(os.listdir("entries")) >= limit_of_entries:
+                    create_block(block_list)
+                    send_latest_block_to_neighbors(node_list, block_list)
 
                 last_time = current_time
-          
+
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:

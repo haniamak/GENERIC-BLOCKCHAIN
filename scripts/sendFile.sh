@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Usage: ./sendFile.sh <nodenum>"
+
 nodenum=$1
 
 # Generate 64 random characters and save to a file
