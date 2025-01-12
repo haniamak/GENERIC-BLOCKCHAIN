@@ -39,6 +39,7 @@ class BlockList:
         if block_list is None:
             block_list = []
         self.block_list = block_list
+        self.branch_list = []
 
     def is_empty(self) -> bool:
         return not bool(self.block_list)
@@ -47,19 +48,41 @@ class BlockList:
         if block.next_block is not None:
             raise TypeError("Block has defined next element - should be None")
 
-        if self.block_list:
-            last_block = self.block_list[-1]
+        if self.branch_list:
+            for branch in self.branch_list:
+                if block.prev_block == hash(branch):
+                    # block extends the tree, so we delete other branches
+                    try:
+                        self.block_list[-1].next_block = hash(block)
+                    except IndexError:
+                        pass
+                    self.block_list.append(branch)
+                    self.branch_list = [block]
+                    return True
 
-            if block.prev_block is None:
-                return False
-            if hash(last_block) != block.prev_block:
+            if len(self.block_list) == 0:
+                if block.prev_block is None:
+                    # block is diffrent root
+                    self.branch_list.append(block)
+                    return True
+                # block is invalid
                 return False
 
-            last_block.next_block = hash(block)
-        self.block_list.append(block)
-        return True
+            if block.prev_block != hash(self.block_list[-1]):
+                # block is invalid
+                return False
+
+            # block is a diffrent branch
+            self.branch_list.append(block)
+            return True
+
+        else:
+            # the first block
+            self.branch_list.append(block)
+            return True
 
     def save(self, path="blocks/block.json") -> None:
+        # TODO: save branch list
         data = []
         for block in self.block_list:
             data.append(block.to_dict())

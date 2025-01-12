@@ -2,7 +2,7 @@ OS = $(shell echo $$OS)
 ifeq ($(OS),Windows_NT)
 	SUDO =
 else
-	SUDO = sudo
+	SUDO =
 endif
 
 venv:

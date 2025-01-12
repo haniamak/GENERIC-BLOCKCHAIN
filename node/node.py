@@ -38,8 +38,8 @@ def send_latest_block_to_neighbors(node_list, block_list):
                     print(f"Sent latest block to {node.ip}:{node.port}")
                     node.send_block = False
                 except Exception as e:
-                    print(f"Failed to send block to {
-                          node.ip}:{node.port}: {e}")
+                    print(
+                        f"Failed to send block to {node.ip}: {node.port}: {e}")
 
 
 def send_entry(node, author_id, file_path):
@@ -112,8 +112,9 @@ def receive_file(data, addr, block_list):
             _, file_size, entry_id, author_id = message.split(":")[:4]
 
             file_size = int(file_size)
-            print(f"Receiving file with Entry ID: {entry_id}, Author ID: {
-                  author_id}, File size: {file_size} bytes from {addr}")
+            print(
+                f"Receiving file with Entry ID: {entry_id}, " +
+                f"Author ID: {author_id}, File size: {file_size} bytes from {addr}")
 
             # Get the actual file data (everything after the header)
             # Extract the file data (after the header)
@@ -121,8 +122,8 @@ def receive_file(data, addr, block_list):
 
             # Ensure the file data size matches the expected size
             if len(file_data) != file_size:
-                print(f"Warning: Expected file size {
-                      file_size}, but received {len(file_data)} bytes.")
+                print(f"Warning: Expected file size " +
+                      f"{file_size}, but received {len(file_data)} bytes.")
 
             file_data = file_data.decode('utf-8')
 
@@ -138,8 +139,8 @@ def receive_file(data, addr, block_list):
 
             # Log receipt
             with open("received_files_log.txt", "a") as log:
-                log.write(f"Received file: {file_name}, Entry ID: {
-                          entry_id}, Author ID: {author_id}, From: {addr}\n")
+                log.write(f"Received file: {file_name}, Entry ID: " +
+                          f"{entry_id}, Author ID: {author_id}, From: {addr}\n")
                 log.flush()
 
             # Check limit of entries in one block
@@ -156,29 +157,10 @@ def receive_file(data, addr, block_list):
             block_data = message[message.find(":", message.find(":")+1):]
             block_dict = json.loads(block_data)
             block = blockList.Block.from_dict(block_dict)
-            if not block_list.add_block(block):
-                # konflikt bloków
-                if block.prev_block is None:
-                    # jest to pierwszy blok albo błędny blok
-                    if len(block_list) > 1:
-                        # jeśli był to pierwszy blok to i tak już mamy więcej
-                        print("dropped incoming block")
-                    else:
-                        # rozgałęźenie
-                        print("fork detected")
-                else:
-                    if len(block_list) < 2:
-                        # nie mamy poprzedniego bloku
-                        print("dropped incoming block")
-
-                    elif block.prev_block == hash(block_list[-2]):
-                        # rozgałęźenie
-                        print("fork detected")
-
-                    else:
-                        # blok jest niepoprawny lub rozgałęźenie jest krótsze
-                        print("dropped incoming block")
-            print(f"Received block: {block}")
+            if block_list.add_block(block):
+                print(f"Received block: {block}")
+            else:
+                print("Block is invalid")
 
     except Exception as e:
         print(f"Error during file reception: {e}")
@@ -294,8 +276,8 @@ def pingNode(node):
     try:
         server_socket.connect((node.ip, int(node.port)))
     except Exception as e:
-        print(f"PING[{server_ip}:{server_port}]: Failed while connecting to {
-              node.ip}:{node.port}: {e}")
+        print(f"PING[{server_ip}:{server_port}]: Failed while connecting to " +
+              f"{node.ip}: {node.port}: {e}")
         return
 
     # send ping to node
