@@ -211,9 +211,11 @@ def check_input():
     return True
 
 
-def send_input(node_list):
-    for file in os.listdir("input"):
+def send_input(node_list, entry_list):
+    files = sorted(os.listdir("input"))
+    for file in files:
         print(f"File input: {file}")
+        anySent = False
 
         for node in node_list.nodes:
             if not node.online:
@@ -227,9 +229,25 @@ def send_input(node_list):
                               file_path=f"input/{file}")
             if sent:
                 node_list.set_online(node.ip, node.port, True)
-                os.remove(f"input/{file}")
+                anySent = True
             else:
                 node_list.set_online(node.ip, node.port, False)
+
+        if anySent:
+
+            file_data = open(f"input/{file}", "r", encoding="utf-8").read()
+
+            entry_dict = {
+                "entry_id": str(uuid.uuid4()),
+                "author_id": "autor",
+                "data": file_data
+            }
+
+            file_name = f"""entries/received_{entry_dict["entry_id"]}.json"""
+            with open(file_name, "w", encoding="utf-8") as f:
+                json.dump(entry_dict, f)
+
+            os.remove(f"input/{file}")
 
 
 def listen(node_list, block_list):
@@ -324,6 +342,9 @@ def main():
     user_list = userList.UserList()
     user_list.from_file("users/users.json")
 
+    entry_list = entryList.EntryList()
+    # entry_list.from_dir("entries")
+
     block_list = blockList.BlockList().load()
 
     print(f"Node list:\n {node_list}")
@@ -350,7 +371,7 @@ def main():
 
                 # Check if we have any files in the input directory
                 if check_input():
-                    send_input(node_list)
+                    send_input(node_list, entry_list)
 
                 # Check if we have enough entries to create a block
                 if len(os.listdir("entries")) >= limit_of_entries:

@@ -71,3 +71,16 @@ class EntryList:
                 entry['encryption_key']
             ))
         return self
+
+    def to_file(self, file_path):
+        with open(file_path, 'w') as file:
+            file.write(self.toJSON())
+
+    def from_dir(self, dir_path):
+        try:
+            files = os.listdir(dir_path)
+            for file in files:
+                with open(file, 'r') as file:
+                    entry = Entry.fromJSON(file.read())
+        except FileNotFoundError:
+            return EntryList()
