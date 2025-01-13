@@ -1,5 +1,6 @@
 from typing import List, Optional
 import json
+import os
 
 
 class Entry:
@@ -34,6 +35,14 @@ class Entry:
             'previous_entries': self.previous_entries,
             'encryption_key': self.encryption_key
         }
+
+    def from_dict(self, data):
+        self.entry_id = data['entry_id']
+        self.author_id = data['author_id']
+        self.data = data['data']
+        self.previous_entries = data['previous_entries']
+        self.encryption_key = data['encryption_key']
+        return self
 
 
 class EntryList:
@@ -81,6 +90,7 @@ class EntryList:
             files = os.listdir(dir_path)
             for file in files:
                 with open(file, 'r') as file:
-                    entry = Entry.fromJSON(file.read())
+                    entry = Entry.from_dict(json.load(file))
+                    self.add_entry(entry)
         except FileNotFoundError:
             return EntryList()

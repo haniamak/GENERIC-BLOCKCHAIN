@@ -24,6 +24,9 @@ class Block:
         self.prev_block = data["prev_block"]
         self.next_block = data["next_block"]
 
+    def pretty_print(self):
+        return f"prev_block: {self.prev_block},\nthis_block: {hash(self)}"
+
     def __str__(self):
         return f"Block data: {self.list_of_entries.to_dict()}"
 
@@ -107,6 +110,10 @@ class BlockList:
                 self.block_list.append(block)
                 prev = block
         return self
+
+    def pretty_print(self):
+        for block in self.block_list:
+            print(block.pretty_print())
 
     def __getitem__(self, index: int) -> Block:
         return self.block_list[index]

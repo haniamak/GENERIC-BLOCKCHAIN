@@ -47,7 +47,7 @@ def send_entry(node, author_id, file_path):
 
     try:
         server_socket.connect((node.ip, int(node.port)))
-        print(f"Connected to {node.ip}:{node.port}")
+        # print(f"Connected to {node.ip}:{node.port}")
     except Exception as e:
         print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
         return False
@@ -96,7 +96,7 @@ def create_block(block_list):
 # to save block_list in block.json
 # block_list.save()
 
-    print(f"New Block created with {entries_id} entries")
+    # print(f"New Block created with {entries_id} entries")
 
 
 def receive_file(data, addr, block_list):
@@ -112,9 +112,9 @@ def receive_file(data, addr, block_list):
             _, file_size, entry_id, author_id = message.split(":")[:4]
 
             file_size = int(file_size)
-            print(
-                f"Receiving file with Entry ID: {entry_id}, " +
-                f"Author ID: {author_id}, File size: {file_size} bytes from {addr}")
+            # print(
+            #     f"Receiving file with Entry ID: {entry_id}, " +
+            #     f"Author ID: {author_id}, File size: {file_size} bytes from {addr}")
 
             # Get the actual file data (everything after the header)
             # Extract the file data (after the header)
@@ -260,10 +260,10 @@ def listen(node_list, block_list):
         server_socket.settimeout(random.randint(3, 5))
 
         conn, addr = server_socket.accept()
-        print(f"Connection from {addr}")
+        # print(f"Connection from {addr}")
 
         data = conn.recv(1024)
-        print(f"Received data from {addr}: {data}")
+        # print(f"Received data from {addr}: {data}")
         if data[:4] == b"PING":
             conn.send(b"pong")
             node_list.set_online(addr[0], addr[1], True)
@@ -321,6 +321,13 @@ def pingNode(node):
         server_socket.close()
 
 
+def fake_ping(node_list):
+    for node in node_list.nodes:
+        if node.online:
+            continue
+        node_list.set_online(node.ip, node.port, True)
+
+
 def on_exit():
     # do cleanup
     global running
@@ -367,7 +374,8 @@ def main():
             if current_time - last_time >= sampling_time:
                 listen(node_list, block_list)
                 # ping offline nodes
-                ping(node_list)
+                # ping(node_list)
+                fake_ping(node_list)
 
                 # Check if we have any files in the input directory
                 if check_input():
@@ -390,7 +398,7 @@ def main():
             user_list.to_file("users/users.json")
 
         print("Block list:")
-        print(block_list)
+        block_list.pretty_print()
         print("Entries list:")
         print(os.listdir("entries"))
         print("Node list:")
