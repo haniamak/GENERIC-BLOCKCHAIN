@@ -42,7 +42,7 @@ def send_latest_block_to_neighbors(node_list, block_list):
                         f"Failed to send block to {node.ip}: {node.port}: {e}")
 
 
-def send_entry(node, author_id, file_path):
+def send_entry(node, uuidStr, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
@@ -60,7 +60,7 @@ def send_entry(node, author_id, file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        entry_id = uuid.uuid4()
+        entry_id = uuidStr
         msg = f"ENTRY:{len(file_data)}:{entry_id}:{author_id}:"
         full_message = msg.encode() + file_data
 
@@ -217,6 +217,8 @@ def send_input(node_list, entry_list):
         print(f"File input: {file}")
         anySent = False
 
+        uuidStr = str(uuid.uuid4())
+
         for node in node_list.nodes:
             if not node.online:
                 continue
@@ -225,7 +227,7 @@ def send_input(node_list, entry_list):
             # send_data(node, "autor", "test", f"input/{file}")
             # Zastanowić się gdzie trzymać autora
 
-            sent = send_entry(node, author_id="autor",
+            sent = send_entry(node, uuidStr, author_id="autor",
                               file_path=f"input/{file}")
             if sent:
                 node_list.set_online(node.ip, node.port, True)
@@ -238,7 +240,7 @@ def send_input(node_list, entry_list):
             file_data = open(f"input/{file}", "r", encoding="utf-8").read()
 
             entry_dict = {
-                "entry_id": str(uuid.uuid4()),
+                "entry_id": uuidStr,
                 "author_id": "autor",
                 "data": file_data
             }
@@ -256,8 +258,8 @@ def listen(node_list, block_list):
             socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((server_ip, int(server_port)))
-        server_socket.listen(1)
-        server_socket.settimeout(random.randint(3, 5))
+        server_socket.listen(5)
+        server_socket.settimeout(1)  # być może mniej
 
         conn, addr = server_socket.accept()
         # print(f"Connection from {addr}")
@@ -370,6 +372,7 @@ def main():
 
     try:
         while running:
+            # TODO Rework, listen ma pauzować pętle
             current_time = time.time()
             if current_time - last_time >= sampling_time:
                 listen(node_list, block_list)
