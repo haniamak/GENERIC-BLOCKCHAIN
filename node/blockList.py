@@ -113,8 +113,30 @@ class BlockList:
         return self
 
     def pretty_print(self):
+        log = "Blocks: \n"
         for block in self.block_list:
-            print(block.pretty_print())
+            log += block.pretty_print() + "\n"
+        log += "Branches: \n"
+        for branch in self.branch_list:
+            log += branch.pretty_print() + "\n"
+        return log
+
+    def last_block(self):
+        if len(self.branch_list) == 1:
+            return self.branch_list[0]
+
+        if len(self.branch_list) == 0:
+            if len(self.block_list) == 0:
+                return None
+            return self.block_list[-1]
+
+        raise ValueError("There are more than one branch")
+
+    def last_hash(self):
+        last = self.last_block()
+        if last:
+            return last.hash()
+        return None
 
     def __getitem__(self, index: int) -> Block:
         return self.block_list[index]

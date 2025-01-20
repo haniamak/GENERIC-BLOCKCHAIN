@@ -26,7 +26,8 @@ listen_socket = None
 def send_latest_block_to_neighbors(node_list, block_list):
     if not block_list.is_empty():
         # To można zmienić, na dowolny blok, lub listę  bloków
-        latest_block = block_list[-1]
+        # block_list.pretty_print()
+        latest_block = block_list.last_block()
         for node in node_list.nodes:
             if node.online:
                 try:
@@ -41,12 +42,12 @@ def send_latest_block_to_neighbors(node_list, block_list):
                     server_socket.close()
                     node.send_block = False
 
-                    log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port}"
+                    log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
                     print(log_text)
                     new_log(log_text)
 
                 except Exception as e:
-                    log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port}"
+                    log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
                     print(log_text)
                     new_log(log_text)
 
@@ -59,7 +60,7 @@ def send_entry(node, uuidStr, author_id, file_path):
         server_socket.connect((node.ip, int(node.port)))
         # print(f"Connected to {node.ip}:{node.port}")
     except Exception as e:
-        ## loging
+        # loging
         log_text = f"Failed while connecting to {node.ip}:{node.port}: {e}"
         print(log_text)
         new_log(log_text)
@@ -111,6 +112,7 @@ def create_block(block_list):
             os.remove(file_path)
 
     block = blockList.Block(list_of_entries)
+    block.prev_block = block_list.last_hash()
     block_list.add_block(block)
 
     log_text = f"Block with entries: {entries_id} created"
@@ -121,6 +123,7 @@ def create_block(block_list):
 # block_list.save()
 
     # print(f"New Block created with {entries_id} entries")
+
 
 def new_log(text):
     log_time = str(datetime.now())[:19]
@@ -169,7 +172,8 @@ def receive_file(data, addr, block_list):
                 json.dump(entry_dict, f)
 
             # Log receipt
-            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}"
+            log_text = f"Received file: {file_name}, Entry ID: " + \
+                f"{entry_id}, Author ID: {author_id}, From: {addr}"
             print(log_text)
             new_log(log_text)
 
@@ -188,11 +192,11 @@ def receive_file(data, addr, block_list):
             block_dict = json.loads(block_data)
             block = blockList.Block.from_dict(block_dict)
             if block_list.add_block(block):
-                log_text = f"Received block with entries: {[x.entry_id for x in block.list_of_entries]} \n"
+                log_text = f"Received block with entries: {[x.entry_id for x in block.list_of_entries.entries]} \n"
                 print(log_text)
                 new_log(log_text)
             else:
-                log_text = f"Received INVALID block with entries: {[x.entry_id for x in block.list_of_entries]} \n"
+                log_text = f"Received INVALID block with entries: {[x.entry_id for x in block.list_of_entries.entries]} \n"
                 print(log_text)
                 new_log(log_text)
 
@@ -239,7 +243,7 @@ def initialize_server():
     if not os.path.isdir("input"):
         os.mkdir("input")
 
-    ## remove logs from previous usage
+    # remove logs from previous usage
     file_path = "log.txt"
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -261,7 +265,7 @@ def check_input():
     if len(os.listdir("input")) == 0:
         log_text = "No files in input directory"
         print(log_text)
-        ##new_log(log_text)
+        # new_log(log_text)
         return False
     return True
 
@@ -464,6 +468,7 @@ def main():
 
     except Exception as e:
         print(f"An error occurred: {e}")
+
     finally:
         if not temporary_dir:
             print("Saving data")
@@ -485,6 +490,7 @@ def main():
         '''
         print(log_text)
         new_log(log_text)
+
 
 if __name__ == "__main__":
     main()
