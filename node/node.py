@@ -10,7 +10,7 @@ import random
 import atexit
 import json
 import uuid
-
+from datetime import datetime
 
 server_ip = ""
 server_port = ""
@@ -37,10 +37,16 @@ def send_latest_block_to_neighbors(node_list, block_list):
                     server_socket.close()
                     print(f"Sent latest block to {node.ip}:{node.port}")
                     node.send_block = False
+
+                    ## loging
+                    log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port} \n"
+                    new_log(log_text)
+
                 except Exception as e:
                     print(
                         f"Failed to send block to {node.ip}: {node.port}: {e}")
-
+                    log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port} \n"
+                    new_log(log_text)
 
 def send_entry(node, uuidStr, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,11 +99,17 @@ def create_block(block_list):
     block = blockList.Block(list_of_entries)
     block_list.add_block(block)
 
+
 # to save block_list in block.json
 # block_list.save()
 
     # print(f"New Block created with {entries_id} entries")
 
+def new_log(text):
+    log_time = str(datetime.now())[:19]
+    with open("received_files_log.txt", "a") as log:
+        log.write(log_time + " - " + text)
+        log.flush()
 
 def receive_file(data, addr, block_list):
     try:
@@ -138,10 +150,8 @@ def receive_file(data, addr, block_list):
                 json.dump(entry_dict, f)
 
             # Log receipt
-            with open("received_files_log.txt", "a") as log:
-                log.write(f"Received file: {file_name}, Entry ID: " +
-                          f"{entry_id}, Author ID: {author_id}, From: {addr}\n")
-                log.flush()
+            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}\n"
+            new_log(log_text)
 
             # Check limit of entries in one block
             # entries_directory = "entries/"
@@ -159,8 +169,14 @@ def receive_file(data, addr, block_list):
             block = blockList.Block.from_dict(block_dict)
             if block_list.add_block(block):
                 print(f"Received block: {block}")
+
+                ## loging
+                log_text = f"Received block with entries: {[x.entry_id for x in block.list_of_entries]} \n"
+                new_log(log_text)
             else:
                 print("Block is invalid")
+                log_text = f"Received INVALID block with entries: {[x.entry_id for x in block.list_of_entries]} \n"
+
 
     except Exception as e:
         print(f"Error during file reception: {e}")
@@ -232,6 +248,10 @@ def send_input(node_list, entry_list):
             if sent:
                 node_list.set_online(node.ip, node.port, True)
                 anySent = True
+
+                ## loging
+                log_text = f"File {file} sent to {node.ip}:{node.port} \n"
+                new_log(log_text)
             else:
                 node_list.set_online(node.ip, node.port, False)
 
