@@ -108,6 +108,10 @@ def create_block(block_list):
     block = blockList.Block(list_of_entries)
     block_list.add_block(block)
 
+    log_text = f"Block with entries: {entries_id} created"
+    print(log_text)
+    new_log(log_text)
+
 
 # to save block_list in block.json
 # block_list.save()
@@ -162,7 +166,7 @@ def receive_file(data, addr, block_list):
                 json.dump(entry_dict, f)
 
             # Log receipt
-            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}"
+            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}\n"
             print(log_text)
             new_log(log_text)
 
@@ -278,7 +282,7 @@ def send_input(node_list, entry_list):
                 anySent = True
 
                 ## loging
-                log_text = f"File {file} sent to {node.ip}:{node.port} \n"
+                log_text = f"File {file} sent to {node.ip}:{node.port}"
                 new_log(log_text)
             else:
                 node_list.set_online(node.ip, node.port, False)
