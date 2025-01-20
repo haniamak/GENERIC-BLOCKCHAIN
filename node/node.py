@@ -111,12 +111,11 @@ def create_block(block_list):
     block.prev_block = block_list.last_hash()
     block_list.add_block(block)
 
-    log_text = f"Block with entries: {entries_id} created"
+    log_text = f"Created block with entries: {entries_id}."
     print(log_text)
     new_log(log_text)
 
-# to save block_list in block.json
-# block_list.save()
+    block_list.save()
 
 
 def new_log(text):
