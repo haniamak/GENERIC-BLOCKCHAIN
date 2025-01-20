@@ -416,11 +416,11 @@ def main():
 
     block_list = blockList.BlockList().load()
 
-    start_settigs = textwrap.dedent(f'''
+    start_settigs = f'''
         Node list: {node_list}
         User list: {user_list}
         {block_list}
-        ''')
+        '''
     print(start_settigs)
     new_log(start_settigs)
 
