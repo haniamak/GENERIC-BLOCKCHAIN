@@ -169,7 +169,7 @@ def receive_file(data, addr, block_list):
                 json.dump(entry_dict, f)
 
             # Log receipt
-            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}\n"
+            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}"
             print(log_text)
             new_log(log_text)
 
