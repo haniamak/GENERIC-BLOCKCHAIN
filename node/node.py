@@ -21,6 +21,7 @@ running = True
 limit_of_entries = 3
 temporary_dir = False
 listen_socket = None
+entries_directory = "entries/"
 
 
 def send_latest_block_to_neighbors(node_list, block_list):
@@ -93,7 +94,6 @@ def send_entry(node, uuid_str, author_id, file_path):
 
 
 def create_block(block_list):
-    entries_directory = "entries/"
     list_of_entries = entryList.EntryList()
     entries_id = []
     for filename in os.listdir(entries_directory)[:limit_of_entries]:
@@ -133,6 +133,8 @@ def receive_file(data, addr, block_list):
             return
 
         message = data.decode()
+
+        # Check the type of received message, currently only supports ENTRY and BLOCK
         if message.startswith("ENTRY:"):
             # Extract the metadata from the header
             _, file_size, entry_id, author_id = message.split(":")[:4]
@@ -250,7 +252,7 @@ def check_input():
     return True
 
 
-def send_input(node_list, entry_list):
+def send_input(node_list):
     files = sorted(os.listdir("input"))
     for file in files:
         log_text = f"File input: {file}"
@@ -323,14 +325,14 @@ def ping(node_list):
     for node in node_list.nodes:
         if node.online:
             continue
-        res = pingNode(node)
+        res = ping_node(node)
         if res:
             node_list.set_online(node.ip, node.port, True)
         else:
             node_list.set_online(node.ip, node.port, False)
 
 
-def pingNode(node):
+def ping_node(node):
     print(f"Pinging {node.ip}:{node.port}")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -393,8 +395,6 @@ def main():
     user_list.from_file("users/users.json")
 
     entry_list = entryList.EntryList()
-    # entry_list.from_dir("entries")
-
     block_list = blockList.BlockList().load()
 
     start_settigs = f'''
@@ -419,11 +419,7 @@ def main():
     try:
         while running:
             # TODO Rework, listen ma pauzować pętle
-            # current_time = time.time()
-            # if current_time - last_time >= sampling_time:
             listen(node_list, block_list)
-            # ping offline nodes
-            # ping(node_list)
             fake_ping(node_list)
 
             # Check if we have any files in the input directory
@@ -431,7 +427,7 @@ def main():
                 log_text = "New file in input folder"
                 print(log_text)
                 new_log(log_text)
-                send_input(node_list, entry_list)
+                send_input(node_list)
 
             # Check if we have enough entries to create a block
             if len(os.listdir("entries")) >= limit_of_entries:
@@ -440,8 +436,6 @@ def main():
                 new_log(log_text)
                 create_block(block_list)
                 send_latest_block_to_neighbors(node_list, block_list)
-
-            # last_time = current_time
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -454,16 +448,16 @@ def main():
             user_list.to_file("users/users.json")
 
         log_text = f'''
-        Block list:
-        {block_list.pretty_print()}
-        Entries list:
-        {os.listdir("entries")}
-        Node list:
-        {node_list}
-        User list:
-        {user_list}
+            Block list:
+            {block_list.pretty_print()}
+            Entries list:
+            {os.listdir("entries")}
+            Node list:
+            {node_list}
+            User list:
+            {user_list}
 
-        Program finished
+            Program finished
         '''
         print(log_text)
         new_log(log_text)

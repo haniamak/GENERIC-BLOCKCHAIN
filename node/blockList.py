@@ -87,8 +87,8 @@ class BlockList:
             self.branch_list.append(block)
             return True
 
+
     def save(self, path="blocks/") -> None:
-        # TODO: save branch list
         for block in self.block_list:
             data = []
             data.append(block.to_dict())
@@ -96,6 +96,7 @@ class BlockList:
             file_path = os.path.join(path, filename)
             with open(file_path, "w") as file:
                 json.dump(data, file)
+
 
     def load(self, path="blocks/"):
         files = os.listdir(path)
