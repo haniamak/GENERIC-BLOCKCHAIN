@@ -39,17 +39,15 @@ def send_latest_block_to_neighbors(node_list, block_list):
 
                     server_socket.send(message)
                     server_socket.close()
-                    print(f"Sent latest block to {node.ip}:{node.port}")
                     node.send_block = False
 
-                    # loging
-                    log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port} \n"
+                    log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port}"
+                    print(log_text)
                     new_log(log_text)
 
                 except Exception as e:
-                    print(
-                        f"Failed to send block to {node.ip}: {node.port}: {e}")
-                    log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port} \n"
+                    log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries]} to {node.ip}:{node.port}"
+                    print(log_text)
                     new_log(log_text)
 
 
@@ -61,12 +59,17 @@ def send_entry(node, uuidStr, author_id, file_path):
         server_socket.connect((node.ip, int(node.port)))
         # print(f"Connected to {node.ip}:{node.port}")
     except Exception as e:
-        print(f"Failed while connecting to {node.ip}:{node.port}: {e}")
+        ## loging
+        log_text = f"Failed while connecting to {node.ip}:{node.port}: {e}"
+        print(log_text)
+        new_log(log_text)
         return False
 
     try:
         if not os.path.exists(file_path):
-            print(f"File not found: {file_path}")
+            log_text = f"File not found: {file_path}"
+            print(log_text)
+            new_log(log_text)
             return False
 
         with open(file_path, "rb") as file:
@@ -76,7 +79,10 @@ def send_entry(node, uuidStr, author_id, file_path):
         msg = f"ENTRY:{len(file_data)}:{entry_id}:{author_id}:"
         full_message = msg.encode() + file_data
 
-        print(f"Sending file with message to {node.ip}:{node.port}")
+        log_text = f"Sending file with message to {node.ip}:{node.port}"
+        print(log_text)
+        new_log(log_text)
+
         server_socket.send(full_message)
     except socket.timeout:
         print(f"Timeout while sending file to {node.ip}:{node.port}")
@@ -107,6 +113,9 @@ def create_block(block_list):
     block = blockList.Block(list_of_entries)
     block_list.add_block(block)
 
+    log_text = f"Block with entries: {entries_id} created"
+    print(log_text)
+    new_log(log_text)
 
 # to save block_list in block.json
 # block_list.save()
@@ -115,8 +124,8 @@ def create_block(block_list):
 
 def new_log(text):
     log_time = str(datetime.now())[:19]
-    with open("received_files_log.txt", "a") as log:
-        log.write(log_time + " - " + text)
+    with open("log.txt", "a") as log:
+        log.write(log_time + " - " + text + "\n")
         log.flush()
 
 
@@ -143,8 +152,9 @@ def receive_file(data, addr, block_list):
 
             # Ensure the file data size matches the expected size
             if len(file_data) != file_size:
-                print(f"Warning: Expected file size " +
-                      f"{file_size}, but received {len(file_data)} bytes.")
+                log_test = f"Warning: Expected file size {file_size}, but received {len(file_data)} bytes."
+                print(log_test)
+                new_log(log_test)
 
             file_data = file_data.decode('utf-8')
 
@@ -159,8 +169,8 @@ def receive_file(data, addr, block_list):
                 json.dump(entry_dict, f)
 
             # Log receipt
-            log_text = f"Received file: {file_name}, Entry ID: " + \
-                f"{entry_id}, Author ID: {author_id}, From: {addr}\n"
+            log_text = f"Received file: {file_name}, Entry ID: " + f"{entry_id}, Author ID: {author_id}, From: {addr}\n"
+            print(log_text)
             new_log(log_text)
 
             # Check limit of entries in one block
@@ -178,17 +188,18 @@ def receive_file(data, addr, block_list):
             block_dict = json.loads(block_data)
             block = blockList.Block.from_dict(block_dict)
             if block_list.add_block(block):
-                print(f"Received block: {block}")
-
-                # loging
                 log_text = f"Received block with entries: {[x.entry_id for x in block.list_of_entries]} \n"
+                print(log_text)
                 new_log(log_text)
             else:
-                print("Block is invalid")
                 log_text = f"Received INVALID block with entries: {[x.entry_id for x in block.list_of_entries]} \n"
+                print(log_text)
+                new_log(log_text)
 
     except Exception as e:
-        print(f"Error during file reception: {e}")
+        log_text = f"Error during file reception: {e}"
+        print(log_text)
+        new_log(log_text)
 
 
 def initialize_server():
@@ -228,17 +239,29 @@ def initialize_server():
     if not os.path.isdir("input"):
         os.mkdir("input")
 
+    ## remove logs from previous usage
+    file_path = "log.txt"
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        log_text = "Removed logs from previous usage"
+        print(log_text)
+        new_log(log_text)
+
 
 def send_signal_to_neighbors(server_socket, node_list, signal):
     for node in node_list.nodes:
-        print(f"Sending {signal} to {node.ip}:{node.port}")
+        log_text = f"Sending {signal} to {node.ip}:{node.port}"
+        print(log_text)
+        new_log(log_text)
         msg = signal
         server_socket.sendto(msg.encode(), (node.ip, int(node.port)))
 
 
 def check_input():
     if len(os.listdir("input")) == 0:
-        print("No files in input directory")
+        log_text = "No files in input directory"
+        print(log_text)
+        ##new_log(log_text)
         return False
     return True
 
@@ -246,7 +269,9 @@ def check_input():
 def send_input(node_list, entry_list):
     files = sorted(os.listdir("input"))
     for file in files:
-        print(f"File input: {file}")
+        log_text = f"File input: {file}"
+        print(log_text)
+        new_log(log_text)
         anySent = False
 
         uuidStr = str(uuid.uuid4())
@@ -255,7 +280,9 @@ def send_input(node_list, entry_list):
             if not node.online:
                 continue
 
-            print(f"Sending {file} to {node.ip}:{node.port}")
+            log_text = f"Sending {file} to {node.ip}:{node.port}"
+            print(log_text)
+            new_log(log_text)
             # send_data(node, "autor", "test", f"input/{file}")
             # Zastanowić się gdzie trzymać autora
 
@@ -266,7 +293,7 @@ def send_input(node_list, entry_list):
                 anySent = True
 
                 # loging
-                log_text = f"File {file} sent to {node.ip}:{node.port} \n"
+                log_text = f"File {file} sent to {node.ip}:{node.port}"
                 new_log(log_text)
             else:
                 node_list.set_online(node.ip, node.port, False)
@@ -389,12 +416,17 @@ def main():
 
     block_list = blockList.BlockList().load()
 
-    print(f"Node list:\n {node_list}")
-    print(f"User list:\n {user_list}")
-    print(f"Block list:\n {block_list}")
+    start_settigs = f'''
+        Node list: {node_list}
+        User list: {user_list}
+        {block_list}
+        '''
+    print(start_settigs)
+    new_log(start_settigs)
 
     print("Configuration finished")
     print("Starting loop, send SIGINT to stop (Ctrl+C)")
+
    # send_signal_to_neighbors(server_socket, node_list, "START")
 
     for node in node_list:
@@ -415,10 +447,16 @@ def main():
 
             # Check if we have any files in the input directory
             if check_input():
+                log_text = "New file in input folder"
+                print(log_text)
+                new_log(log_text)
                 send_input(node_list, entry_list)
 
             # Check if we have enough entries to create a block
             if len(os.listdir("entries")) >= limit_of_entries:
+                log_text = "Limit of entries reached"
+                print(log_text)
+                new_log(log_text)
                 create_block(block_list)
                 send_latest_block_to_neighbors(node_list, block_list)
 
@@ -433,17 +471,20 @@ def main():
             node_list.to_file("nodes/nodes.json")
             user_list.to_file("users/users.json")
 
-        print("Block list:")
-        block_list.pretty_print()
-        print("Entries list:")
-        print(os.listdir("entries"))
-        print("Node list:")
-        print(node_list)
-        print("User list:")
-        print(user_list)
+        log_text = f'''
+        Block list:
+        {block_list.pretty_print()}
+        Entries list:
+        {os.listdir("entries")}
+        Node list:
+        {node_list}
+        User list:
+        {user_list}
 
-        print("Program finished")
-
+        Program finished
+        '''
+        print(log_text)
+        new_log(log_text)
 
 if __name__ == "__main__":
     main()
