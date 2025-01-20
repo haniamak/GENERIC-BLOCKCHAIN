@@ -1,6 +1,7 @@
 from typing import List, Optional
 from entryList import Entry, EntryList
 import json
+import hashlib
 
 
 class Block:
@@ -25,13 +26,13 @@ class Block:
         self.next_block = data["next_block"]
 
     def pretty_print(self):
-        return f"prev_block: {self.prev_block},\nthis_block: {hash(self)}"
+        return f"prev_block: {self.prev_block},\nthis_block: {self.hash()}"
+
+    def hash(self):
+        return hashlib.sha256(self.__str__().encode()).hexdigest()
 
     def __str__(self):
         return f"Block data: {self.list_of_entries.to_dict()}"
-
-    def __hash__(self):
-        return hash(self.__str__())
 
     def __repr__(self):
         return self.__str__()
@@ -53,10 +54,10 @@ class BlockList:
 
         if self.branch_list:
             for branch in self.branch_list:
-                if block.prev_block == hash(branch):
+                if block.prev_block == branch.hash():
                     # block extends the tree, so we delete other branches
                     try:
-                        self.block_list[-1].next_block = hash(block)
+                        self.block_list[-1].next_block = block.hash()
                     except IndexError:
                         pass
                     self.block_list.append(branch)
@@ -71,7 +72,7 @@ class BlockList:
                 # block is invalid
                 return False
 
-            if block.prev_block != hash(self.block_list[-1]):
+            if block.prev_block != self.block_list[-1].hash():
                 # block is invalid
                 return False
 
@@ -103,10 +104,10 @@ class BlockList:
                     list_of_entries.add_entry(Entry(
                         entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
                 block = Block(list_of_entries=list_of_entries,
-                              prev_block=hash(prev))
+                              prev_block=prev.hash() if prev else None)
 
                 if len(self.block_list) != 0:
-                    self.block_list[-1].next_block = hash(block)
+                    self.block_list[-1].next_block = block.hash()
                 self.block_list.append(block)
                 prev = block
         return self

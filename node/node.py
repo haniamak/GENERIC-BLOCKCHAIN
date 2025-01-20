@@ -11,12 +11,15 @@ import atexit
 import json
 import uuid
 
+LISTEN_TIMEOUT = 1
+SEND_TIMEOUT = 2
 
 server_ip = ""
 server_port = ""
 running = True
 limit_of_entries = 3
 temporary_dir = False
+listen_socket = None
 
 
 def send_latest_block_to_neighbors(node_list, block_list):
@@ -44,6 +47,7 @@ def send_latest_block_to_neighbors(node_list, block_list):
 
 def send_entry(node, uuidStr, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.settimeout(SEND_TIMEOUT)
 
     try:
         server_socket.connect((node.ip, int(node.port)))
@@ -66,7 +70,9 @@ def send_entry(node, uuidStr, author_id, file_path):
 
         print(f"Sending file with message to {node.ip}:{node.port}")
         server_socket.send(full_message)
-
+    except socket.timeout:
+        print(f"Timeout while sending file to {node.ip}:{node.port}")
+        return False
     except Exception as e:
         print(f"Error during file transmission: {e}")
         return False
@@ -102,7 +108,7 @@ def create_block(block_list):
 def receive_file(data, addr, block_list):
     try:
         # Ensure we've received data properly
-        if not data:
+        if not data or len(data) == 0:
             print(f"No data received from {addr}")
             return
 
@@ -167,7 +173,7 @@ def receive_file(data, addr, block_list):
 
 
 def initialize_server():
-    global server_ip, server_port, temporary_dir
+    global server_ip, server_port, temporary_dir, listen_socket
 
     if len(sys.argv) >= 3:
         dir = sys.argv[1]
@@ -183,6 +189,13 @@ def initialize_server():
     else:
         print("Usage: python node.py <path_to_working_directory> <ip:port>")
         sys.exit(1)
+
+    listen_socket = socket.socket(
+        socket.AF_INET, socket.SOCK_STREAM)
+    listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listen_socket.bind((server_ip, int(server_port)))
+    listen_socket.listen(5)
+    listen_socket.settimeout(1)
 
     # Create directories for everything
     if not os.path.isdir("blocks"):
@@ -253,29 +266,26 @@ def send_input(node_list, entry_list):
 
 
 def listen(node_list, block_list):
-    try:
-        server_socket = socket.socket(
-            socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((server_ip, int(server_port)))
-        server_socket.listen(5)
-        server_socket.settimeout(1)  # być może mniej
+    global listen_socket
 
-        conn, addr = server_socket.accept()
-        # print(f"Connection from {addr}")
-
-        data = conn.recv(1024)
-        # print(f"Received data from {addr}: {data}")
-        if data[:4] == b"PING":
-            conn.send(b"pong")
-            node_list.set_online(addr[0], addr[1], True)
-            print(f"Sent pong to {addr[0]}:{addr[1]}")
-
-        if data.startswith(b"ENTRY:") or data.startswith(b"BLOCK:"):
-            receive_file(data, addr, block_list)
-
-    except Exception as e:
-        print(f"No data received: {e}")
+    conn = None
+    while running:
+        try:
+            conn, addr = listen_socket.accept()
+            data = conn.recv(1024)
+            if data[:4] == b"PING":
+                conn.send(b"pong")
+                node_list.set_online(addr[0], addr[1], True)
+                print(f"Sent pong to {addr[0]}:{addr[1]}")
+            elif data.startswith(b"ENTRY:") or data.startswith(b"BLOCK:"):
+                receive_file(data, addr, block_list)
+        except socket.timeout:
+            break
+        except Exception as e:
+            print(f"Error during connection handling: {e}")
+        finally:
+            if conn:
+                conn.close()
 
 
 def ping(node_list):
@@ -373,23 +383,23 @@ def main():
     try:
         while running:
             # TODO Rework, listen ma pauzować pętle
-            current_time = time.time()
-            if current_time - last_time >= sampling_time:
-                listen(node_list, block_list)
-                # ping offline nodes
-                # ping(node_list)
-                fake_ping(node_list)
+            # current_time = time.time()
+            # if current_time - last_time >= sampling_time:
+            listen(node_list, block_list)
+            # ping offline nodes
+            # ping(node_list)
+            fake_ping(node_list)
 
-                # Check if we have any files in the input directory
-                if check_input():
-                    send_input(node_list, entry_list)
+            # Check if we have any files in the input directory
+            if check_input():
+                send_input(node_list, entry_list)
 
-                # Check if we have enough entries to create a block
-                if len(os.listdir("entries")) >= limit_of_entries:
-                    create_block(block_list)
-                    send_latest_block_to_neighbors(node_list, block_list)
+            # Check if we have enough entries to create a block
+            if len(os.listdir("entries")) >= limit_of_entries:
+                create_block(block_list)
+                send_latest_block_to_neighbors(node_list, block_list)
 
-                last_time = current_time
+            # last_time = current_time
 
     except Exception as e:
         print(f"An error occurred: {e}")
