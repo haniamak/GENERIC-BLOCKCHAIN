@@ -86,13 +86,15 @@ class BlockList:
             self.branch_list.append(block)
             return True
 
-    def save(self, path="blocks/block.json") -> None:
+    def save(self, path="blocks/") -> None:
         # TODO: save branch list
-        data = []
         for block in self.block_list:
+            data = []
             data.append(block.to_dict())
-        with open(path, "w") as file:
-            json.dump(data, file)
+            filename = f"{block.hash()}.json"
+            file_path = os.path.join(path, filename)
+            with open(file_path, "w") as file:
+                json.dump(data, file)
 
     def load(self, path="blocks/"):
         files = os.listdir(path)
