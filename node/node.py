@@ -50,7 +50,7 @@ def send_latest_block_to_neighbors(node_list, block_list):
                     new_log(log_text)
 
 
-def send_entry(node, uuidStr, author_id, file_path):
+def send_entry(node, uuid_str, author_id, file_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.settimeout(SEND_TIMEOUT)
 
@@ -72,7 +72,7 @@ def send_entry(node, uuidStr, author_id, file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        entry_id = uuidStr
+        entry_id = uuid_str
         msg = f"ENTRY:{len(file_data)}:{entry_id}:{author_id}:"
         full_message = msg.encode() + file_data
 
@@ -256,9 +256,9 @@ def send_input(node_list, entry_list):
         log_text = f"File input: {file}"
         print(log_text)
         new_log(log_text)
-        anySent = False
+        any_sent = False
 
-        uuidStr = str(uuid.uuid4())
+        uuid_str = str(uuid.uuid4())
 
         for node in node_list.nodes:
             if not node.online:
@@ -268,24 +268,23 @@ def send_input(node_list, entry_list):
             print(log_text)
             new_log(log_text)
 
-            sent = send_entry(node, uuidStr, author_id="autor",
+            sent = send_entry(node, uuid_str, author_id="autor",
                               file_path=f"input/{file}")
             if sent:
                 node_list.set_online(node.ip, node.port, True)
-                anySent = True
+                any_sent = True
 
-                # loging
+                # logging
                 log_text = f"File {file} sent to {node.ip}:{node.port}"
                 new_log(log_text)
             else:
                 node_list.set_online(node.ip, node.port, False)
 
-        if anySent:
-
+        if any_sent:
             file_data = open(f"input/{file}", "r", encoding="utf-8").read()
 
             entry_dict = {
-                "entry_id": uuidStr,
+                "entry_id": uuid_str,
                 "author_id": "autor",
                 "data": file_data
             }

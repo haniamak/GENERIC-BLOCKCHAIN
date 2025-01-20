@@ -66,10 +66,10 @@ class EntryList:
     def to_dict(self):
         return [x.to_dict() for x in self.entries]
 
-    def toJSON(self):
+    def to_json(self):
         return json.dumps(self.to_dict())
 
-    def fromJSON(self, json_str):
+    def from_json(self, json_str):
         data = json.loads(json_str)
         for entry in data:
             self.add_entry(Entry(
@@ -83,7 +83,7 @@ class EntryList:
 
     def to_file(self, file_path):
         with open(file_path, 'w') as file:
-            file.write(self.toJSON())
+            file.write(self.to_json())
 
     def from_dir(self, dir_path):
         try:

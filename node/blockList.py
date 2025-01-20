@@ -52,7 +52,6 @@ class BlockList:
     def add_block(self, block: Block) -> bool:
         if block.next_block is not None:
             raise TypeError("Block has defined next element - should be None")
-
         if self.branch_list:
             for branch in self.branch_list:
                 if block.prev_block == branch.hash():
@@ -71,10 +70,12 @@ class BlockList:
                     self.branch_list.append(block)
                     return True
                 # block is invalid
+                self.return_entries(block)
                 return False
 
             if block.prev_block != self.block_list[-1].hash():
                 # block is invalid
+                self.return_entries(block)
                 return False
 
             # block is a diffrent branch
@@ -117,6 +118,13 @@ class BlockList:
                     self.block_list.append(block)
                     prev = block
         return self
+
+    def return_entries(self, block: Block) -> None:
+        for entry in block.list_of_entries.entries:
+            entry_dict = entry.to_dict()
+            file_name = f"""entries/received_{entry_dict["entry_id"]}.json"""
+            with open(file_name, "w", encoding="utf-8") as f:
+                json.dump(entry_dict, f)
 
     def pretty_print(self):
         log = "Blocks: \n"
