@@ -25,8 +25,6 @@ listen_socket = None
 
 def send_latest_block_to_neighbors(node_list, block_list):
     if not block_list.is_empty():
-        # To można zmienić, na dowolny blok, lub listę  bloków
-        # block_list.pretty_print()
         latest_block = block_list.last_block()
         for node in node_list.nodes:
             if node.online:
@@ -58,9 +56,7 @@ def send_entry(node, uuidStr, author_id, file_path):
 
     try:
         server_socket.connect((node.ip, int(node.port)))
-        # print(f"Connected to {node.ip}:{node.port}")
     except Exception as e:
-        # loging
         log_text = f"Failed while connecting to {node.ip}:{node.port}: {e}"
         print(log_text)
         new_log(log_text)
@@ -122,8 +118,6 @@ def create_block(block_list):
 # to save block_list in block.json
 # block_list.save()
 
-    # print(f"New Block created with {entries_id} entries")
-
 
 def new_log(text):
     log_time = str(datetime.now())[:19]
@@ -145,9 +139,6 @@ def receive_file(data, addr, block_list):
             _, file_size, entry_id, author_id = message.split(":")[:4]
 
             file_size = int(file_size)
-            # print(
-            #     f"Receiving file with Entry ID: {entry_id}, " +
-            #     f"Author ID: {author_id}, File size: {file_size} bytes from {addr}")
 
             # Get the actual file data (everything after the header)
             # Extract the file data (after the header)
@@ -177,17 +168,7 @@ def receive_file(data, addr, block_list):
             print(log_text)
             new_log(log_text)
 
-            # Check limit of entries in one block
-            # entries_directory = "entries/"
-            # num_entries = len(os.listdir(entries_directory))
-            # if num_entries >= limit_of_entries:
-            #     create_block(block_list)
-            #     send_latest_block_to_neighbors(node_list, block_list)
-
         elif message.startswith("BLOCK:"):
-            # TODO
-            # Trzeba dodać zajmowanie się blokami - zapisać oraz zaktualizować odpowiednio strukturę blockList
-            # print(message)
             block_data = message[message.find(":", message.find(":")+1):]
             block_dict = json.loads(block_data)
             block = blockList.Block.from_dict(block_dict)
@@ -287,8 +268,6 @@ def send_input(node_list, entry_list):
             log_text = f"Sending {file} to {node.ip}:{node.port}"
             print(log_text)
             new_log(log_text)
-            # send_data(node, "autor", "test", f"input/{file}")
-            # Zastanowić się gdzie trzymać autora
 
             sent = send_entry(node, uuidStr, author_id="autor",
                               file_path=f"input/{file}")
