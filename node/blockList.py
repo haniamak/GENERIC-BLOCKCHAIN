@@ -2,6 +2,7 @@ from typing import List, Optional
 from entryList import Entry, EntryList
 import json
 import hashlib
+import os
 
 
 class Block:
@@ -93,23 +94,26 @@ class BlockList:
         with open(path, "w") as file:
             json.dump(data, file)
 
-    def load(self, path="blocks/block.json"):
-        with open(path, 'r') as file:
-            data = json.load(file)
-            self.block_list = []
-            prev = None
-            for block_data in data:
-                list_of_entries = EntryList()
-                for entry in block_data["entries"]:
-                    list_of_entries.add_entry(Entry(
-                        entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
-                block = Block(list_of_entries=list_of_entries,
-                              prev_block=prev.hash() if prev else None)
+    def load(self, path="blocks/"):
+        files = os.listdir(path)
+        self.block_list = []
+        prev = None
+        for filename in files:
+            file_path = os.path.join(path, filename)
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                for block_data in data:
+                    list_of_entries = EntryList()
+                    for entry in block_data["entries"]:
+                        list_of_entries.add_entry(Entry(
+                            entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
+                    block = Block(list_of_entries=list_of_entries,
+                                prev_block=prev.hash() if prev else None)
 
-                if len(self.block_list) != 0:
-                    self.block_list[-1].next_block = block.hash()
-                self.block_list.append(block)
-                prev = block
+                    if len(self.block_list) != 0:
+                        self.block_list[-1].next_block = block.hash()
+                    self.block_list.append(block)
+                    prev = block
         return self
 
     def pretty_print(self):
