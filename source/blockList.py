@@ -76,7 +76,7 @@ class BlockList:
             with open(file_path, "w") as file:
                 json.dump(data, file)
 
-    def load(self, path="blocks/"):
+    def from_file(self, path="blocks/"):
         files = os.listdir(path)
         self.block_list = []
         prev = None
