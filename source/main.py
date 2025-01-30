@@ -13,6 +13,7 @@ import atexit
 import json
 import uuid
 from datetime import datetime
+import hashlib
 
 LISTEN_TIMEOUT = 1
 SEND_TIMEOUT = 2
@@ -263,7 +264,7 @@ def send_input(node_list):
         new_log(log_text)
         any_sent = False
 
-        uuid_str = str(uuid.uuid4())
+        uuid_str = str(hashlib.sha256(file.encode()).hexdigest())
 
         for node in node_list.nodes:
             if not node.online:

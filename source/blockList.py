@@ -30,7 +30,8 @@ class Block:
         return f"prev_block: {self.prev_block},\nthis_block: {self.hash()}"
 
     def hash(self):
-        return hashlib.sha256(self.__str__().encode()).hexdigest()
+        string = str(self.list_of_entries.hash() + str(self.prev_block))
+        return hashlib.sha256(string.encode()).hexdigest()
 
     def __str__(self):
         return f"Block data: {self.list_of_entries.to_dict()}"
