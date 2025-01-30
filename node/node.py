@@ -5,6 +5,8 @@ import blockList
 import nodeList
 import userList
 import entryList
+from entryList import Entry, EntryList
+from blockList import Block, Tree, TreeNode
 import sys
 import random
 import atexit
@@ -24,9 +26,7 @@ listen_socket = None
 entries_directory = "entries/"
 
 
-def send_latest_block_to_neighbors(node_list, block_list):
-    if not block_list.is_empty():
-        latest_block = block_list.last_block()
+def send_latest_block_to_neighbors(node_list, latest_block):
         for node in node_list.nodes:
             if node.online:
                 try:
@@ -116,6 +116,7 @@ def create_block(block_list):
     new_log(log_text)
 
     block_list.save()
+    return block
 
 
 def new_log(text):
@@ -434,8 +435,8 @@ def main():
                 log_text = "Limit of entries reached"
                 print(log_text)
                 new_log(log_text)
-                create_block(block_list)
-                send_latest_block_to_neighbors(node_list, block_list)
+                new_block = create_block(block_list)
+                send_latest_block_to_neighbors(node_list, new_block)
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -461,6 +462,32 @@ def main():
         '''
         print(log_text)
         new_log(log_text)
+
+    # entry1 = Entry(entry_id="1", author_id="A", data="Entry 1", previous_entries=[], encryption_key="key1")
+    # entry2 = Entry(entry_id="2", author_id="B", data="Entry 2", previous_entries=["1"], encryption_key="key2")
+    # entry3 = Entry(entry_id="3", author_id="C", data="Entry 3", previous_entries=["2"], encryption_key="key3")
+    # entry4 = Entry(entry_id="4", author_id="D", data="Entry 4", previous_entries=["2"], encryption_key="key4")
+    # entry5 = Entry(entry_id="5", author_id="E", data="Entry 5", previous_entries=["2"], encryption_key="key5")
+    # entry6 = Entry(entry_id="6", author_id="F", data="Entry 6", previous_entries=["2"], encryption_key="key6")
+    #
+    # entry_list1 = EntryList([entry1])
+    # entry_list2 = EntryList([entry2])
+    # entry_list3 = EntryList([entry3])
+    # entry_list4 = EntryList([entry4])
+    # entry_list5 = EntryList([entry5])
+    # entry_list6 = EntryList([entry6])
+    #
+    # block1 = Block(entry_list1)
+    # block2 = Block(entry_list2, prev_block=block1.hash())
+    # block3 = Block(entry_list3, prev_block=block2.hash())
+    # block4 = Block(entry_list4, prev_block=block2.hash())
+    # block5 = Block(entry_list5, prev_block=block3.hash())
+    # block6 = Block(entry_list6, prev_block=block3.hash())
+    #
+    # block_list = blockList.BlockList([block1, block2, block3, block4, block5, block6])
+    #
+    # print(block_list)
+
 
 
 if __name__ == "__main__":

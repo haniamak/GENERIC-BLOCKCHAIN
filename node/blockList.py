@@ -41,10 +41,13 @@ class Block:
 
 class BlockList:
     def __init__(self, block_list: Optional[List[Block]] = None) -> None:
+        self.tree = Tree()
         if block_list is None:
-            block_list = []
-        self.block_list = block_list
-        self.branch_list = []
+            self.block_list = []
+        else:
+            self.block_list = []
+            for block in block_list:
+                self.add_block(block)
 
     def is_empty(self) -> bool:
         return not bool(self.block_list)
@@ -52,40 +55,18 @@ class BlockList:
     def add_block(self, block: Block) -> bool:
         if block.next_block is not None:
             raise TypeError("Block has defined next element - should be None")
-        if self.branch_list:
-            for branch in self.branch_list:
-                if block.prev_block == branch.hash():
-                    # block extends the tree, so we delete other branches
-                    try:
-                        self.block_list[-1].next_block = block.hash()
-                    except IndexError:
-                        pass
-                    self.block_list.append(branch)
-                    self.branch_list = [block]
-                    return True
 
-            if len(self.block_list) == 0:
-                if block.prev_block is None:
-                    # block is diffrent root
-                    self.branch_list.append(block)
-                    return True
-                # block is invalid
-                self.return_entries(block)
-                return False
-
-            if block.prev_block != self.block_list[-1].hash():
-                # block is invalid
-                self.return_entries(block)
-                return False
-
-            # block is a diffrent branch
-            self.branch_list.append(block)
-            return True
-
+        tree_node = TreeNode(block)
+        if self.is_empty():
+            self.block_list.append(block)
+            self.tree.add_block(tree_node)
         else:
-            # the first block
-            self.branch_list.append(block)
-            return True
+            self.tree.add_block(tree_node)
+            longest_path = self.tree.longest_path()
+            print(longest_path)
+            self.block_list = longest_path
+
+
 
 
     def save(self, path="blocks/") -> None:
@@ -132,20 +113,16 @@ class BlockList:
         for block in self.block_list:
             log += block.pretty_print() + "\n"
         log += "Branches: \n"
-        for branch in self.branch_list:
+        for branch in self.block_list:
             log += branch.pretty_print() + "\n"
         return log
 
     def last_block(self):
-        if len(self.branch_list) == 1:
-            return self.branch_list[0]
+        if len(self.block_list) == 0:
+            return None
 
-        if len(self.branch_list) == 0:
-            if len(self.block_list) == 0:
-                return None
-            return self.block_list[-1]
+        return self.block_list[-1]
 
-        raise ValueError("There are more than one branch")
 
     def last_hash(self):
         last = self.last_block()
@@ -164,3 +141,59 @@ class BlockList:
 
     def __len__(self) -> int:
         return len(self.block_list)
+
+
+class TreeNode:
+    def __init__(self, block: Block, parent: Optional['TreeNode'] = None):
+        self.block = block
+        self.parent = parent
+        self.children = []
+
+    def hash(self):
+        return self.block.hash()
+
+    def add_child(self, child: 'TreeNode'):
+        self.children.append(child)
+
+    def __str__(self):
+        return f"TreeNode(block={self.block.hash()})"
+
+class Tree:
+    def __init__(self, root: Optional[TreeNode] = None):
+        self.root = root
+        self.all_nodes = {}
+
+    def add_block(self, tree_block: TreeNode):
+        if not self.root:
+            self.root = tree_block
+            self.all_nodes[tree_block.hash()] = tree_block
+
+        else:
+            try:
+                tree_block_parent = self.all_nodes[tree_block.block.prev_block]
+                self.all_nodes[tree_block_parent.hash()].children.append(tree_block)
+                self.all_nodes[tree_block.hash()] = tree_block
+            except KeyError:
+                print("Invalid Block - no parent in tree")
+
+    def longest_path(self):
+        def rec(current_path, tree_block):
+            if tree_block is None:
+                return current_path
+            else:
+                new_path = current_path + [tree_block.block]
+                children_paths = [
+                    rec(new_path, child)
+                    for child in self.all_nodes[tree_block.hash()].children
+                ]
+                return max(children_paths, key=len) if children_paths else new_path
+
+        return rec([], self.root)
+
+    def print_longest_path(self):
+        path = self.longest_path()
+        print("Longest path:")
+        for i, block in enumerate(path):
+            print(f"{i}: {block.hash()}")
+
+
