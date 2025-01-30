@@ -164,3 +164,106 @@ class BlockList:
 
     def __len__(self) -> int:
         return len(self.block_list)
+
+
+class TreeNode:
+    def __init__(self, block: Block, parent: Optional['TreeNode'] = None):
+        self.block = block
+        self.parent = parent
+        self.children = []
+
+    def add_child(self, child: 'TreeNode'):
+        self.children.append(child)
+
+    def __repr__(self):
+        return f"TreeNode(block={self.block.hash()})"
+
+
+class TreeList:
+    def __init__(self, root: Optional[TreeNode] = None):
+        self.root = root
+        self.all_nodes = []  # Will hold all nodes for easy access
+
+    def is_empty(self) -> bool:
+        return self.root is None
+
+    def add_block(self, block: Block) -> bool:
+        if not self.root:
+            # If no root, set the first block as the root
+            self.root = TreeNode(block)
+            self.all_nodes.append(self.root)
+            return True
+
+        # Check if the block is an extension of any existing block in the tree
+        for node in self.all_nodes:
+            if node.block.hash() == block.prev_block:
+                # Block is an extension of this node, so add as a child
+                new_node = TreeNode(block, parent=node)
+                node.add_child(new_node)
+                self.all_nodes.append(new_node)
+                return True
+
+        # If no valid parent was found, this is an orphan block and should be handled accordingly
+        self.handle_orphan(block)
+        return False
+
+    def handle_orphan(self, block: Block):
+        # You can choose to store orphans separately, or handle them differently
+        orphan_node = TreeNode(block)
+        self.all_nodes.append(orphan_node)
+        print(f"Orphan block added: {block.hash()}")
+
+    def save(self, path="tree_blocks/") -> None:
+        if self.root:
+            self._save_node(self.root, path)
+
+    def _save_node(self, node: TreeNode, path: str) -> None:
+        # Recursively save all nodes in the tree
+        data = [node.block.to_dict()]
+        filename = f"{node.block.hash()}.json"
+        file_path = os.path.join(path, filename)
+        with open(file_path, "w") as file:
+            json.dump(data, file)
+
+        for child in node.children:
+            self._save_node(child, path)
+
+    def load(self, path="tree_blocks/"):
+        files = os.listdir(path)
+        self.all_nodes = []
+        self.root = None
+
+        for filename in files:
+            file_path = os.path.join(path, filename)
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                for block_data in data:
+                    list_of_entries = EntryList()
+                    for entry in block_data["entries"]:
+                        list_of_entries.add_entry(Entry(
+                            entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
+                    
+                    block = Block(list_of_entries=list_of_entries,
+                                prev_block=block_data["prev_block"])
+                    
+                    self.add_block(block)
+        return self
+
+    def pretty_print(self) -> str:
+        return self._pretty_print_node(self.root)
+
+    def _pretty_print_node(self, node: TreeNode, level=0) -> str:
+        indent = "  " * level
+        result = f"{indent}Block {node.block.hash()} (Parent: {node.parent.block.hash() if node.parent else 'None'})\n"
+        for child in node.children:
+            result += self._pretty_print_node(child, level + 1)
+        return result
+
+    def __repr__(self):
+        return self.pretty_print()
+
+    def __str__(self):
+        return self.pretty_print()
+
+    def __len__(self):
+        return len(self.all_nodes)

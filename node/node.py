@@ -5,6 +5,8 @@ import blockList
 import nodeList
 import userList
 import entryList
+from entryList import Entry, EntryList
+from blockList import Block, TreeList, TreeNode
 import sys
 import random
 import atexit
@@ -381,86 +383,123 @@ def on_exit():
 
 
 def main():
-    global server_ip, server_port, running
+#     global server_ip, server_port, running
 
-    atexit.register(on_exit)
+#     atexit.register(on_exit)
 
-    # Initialize node, user and block lists
-    initialize_server()
+#     # Initialize node, user and block lists
+#     initialize_server()
 
-    node_list = nodeList.NodeList()
-    node_list.from_file("nodes/nodes.json")
+#     node_list = nodeList.NodeList()
+#     node_list.from_file("nodes/nodes.json")
 
-    user_list = userList.UserList()
-    user_list.from_file("users/users.json")
+#     user_list = userList.UserList()
+#     user_list.from_file("users/users.json")
 
-    entry_list = entryList.EntryList()
-    block_list = blockList.BlockList().load()
+#     entry_list = entryList.EntryList()
+#     block_list = blockList.BlockList().load()
 
-    start_settigs = f'''
-        Node list: {node_list}
-        User list: {user_list}
-        {block_list}
-        '''
-    print(start_settigs)
-    new_log(start_settigs)
+#     start_settigs = f'''
+#         Node list: {node_list}
+#         User list: {user_list}
+#         {block_list}
+#         '''
+#     print(start_settigs)
+#     new_log(start_settigs)
 
-    print("Configuration finished")
-    print("Starting loop, send SIGINT to stop (Ctrl+C)")
+#     print("Configuration finished")
+#     print("Starting loop, send SIGINT to stop (Ctrl+C)")
 
-   # send_signal_to_neighbors(server_socket, node_list, "START")
+#    # send_signal_to_neighbors(server_socket, node_list, "START")
 
-    for node in node_list:
-        node_list.set_online(node.ip, node.port, False)
+#     for node in node_list:
+#         node_list.set_online(node.ip, node.port, False)
 
-    sampling_time = 2
-    last_time = time.time()
+#     sampling_time = 2
+#     last_time = time.time()
 
-    try:
-        while running:
-            # TODO Rework, listen ma pauzować pętle
-            listen(node_list, block_list)
-            fake_ping(node_list)
+#     try:
+#         while running:
+#             # TODO Rework, listen ma pauzować pętle
+#             listen(node_list, block_list)
+#             fake_ping(node_list)
 
-            # Check if we have any files in the input directory
-            if check_input():
-                log_text = "New file in input folder"
-                print(log_text)
-                new_log(log_text)
-                send_input(node_list)
+#             # Check if we have any files in the input directory
+#             if check_input():
+#                 log_text = "New file in input folder"
+#                 print(log_text)
+#                 new_log(log_text)
+#                 send_input(node_list)
 
-            # Check if we have enough entries to create a block
-            if len(os.listdir("entries")) >= limit_of_entries:
-                log_text = "Limit of entries reached"
-                print(log_text)
-                new_log(log_text)
-                create_block(block_list)
-                send_latest_block_to_neighbors(node_list, block_list)
+#             # Check if we have enough entries to create a block
+#             if len(os.listdir("entries")) >= limit_of_entries:
+#                 log_text = "Limit of entries reached"
+#                 print(log_text)
+#                 new_log(log_text)
+#                 create_block(block_list)
+#                 send_latest_block_to_neighbors(node_list, block_list)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
-    finally:
-        if not temporary_dir:
-            print("Saving data")
-            block_list.save()
-            node_list.to_file("nodes/nodes.json")
-            user_list.to_file("users/users.json")
+#     finally:
+#         if not temporary_dir:
+#             print("Saving data")
+#             block_list.save()
+#             node_list.to_file("nodes/nodes.json")
+#             user_list.to_file("users/users.json")
 
-        log_text = f'''
-            Block list:
-            {block_list.pretty_print()}
-            Entries list:
-            {os.listdir("entries")}
-            Node list:
-            {node_list}
-            User list:
-            {user_list}
+#         log_text = f'''
+#             Block list:
+#             {block_list.pretty_print()}
+#             Entries list:
+#             {os.listdir("entries")}
+#             Node list:
+#             {node_list}
+#             User list:
+#             {user_list}
 
-            Program finished
-        '''
-        print(log_text)
-        new_log(log_text)
+#             Program finished
+#         '''
+#         print(log_text)
+#         new_log(log_text)
+
+    entry1 = Entry(entry_id="1", author_id="A", data="Entry 1", previous_entries=[], encryption_key="key1")
+    entry2 = Entry(entry_id="2", author_id="B", data="Entry 2", previous_entries=["1"], encryption_key="key2")
+    entry3 = Entry(entry_id="3", author_id="C", data="Entry 3", previous_entries=["2"], encryption_key="key3")
+    entry4 = Entry(entry_id="4", author_id="D", data="Entry 4", previous_entries=["2"], encryption_key="key4")
+    entry5 = Entry(entry_id="5", author_id="E", data="Entry 5", previous_entries=["2"], encryption_key="key5")
+
+    entry_list1 = EntryList([entry1])
+    entry_list2 = EntryList([entry2])
+    entry_list3 = EntryList([entry3])
+    entry_list4 = EntryList([entry4])
+    entry_list5 = EntryList([entry5])
+
+
+    block1 = Block(entry_list1)
+    block2 = Block(entry_list2, prev_block=block1.hash())
+    block3 = Block(entry_list3, prev_block=block2.hash())
+    block4 = Block(entry_list4, prev_block=block2.hash())
+    block5 = Block(entry_list5, prev_block=block2.hash())
+
+    tblock1 = TreeNode(block1)
+    tblock2 = TreeNode(block2)
+    tblock3 = TreeNode(block3)
+    tblock4 = TreeNode(block4)
+    tblock5 = TreeNode(block5)
+
+
+    tree = TreeList()
+    tree.add_block(tblock1)  
+    tree.add_block(tblock2)  
+    tree.add_block(tblock3)  
+    tree.add_block(tblock4) 
+    tree.add_block(tblock5)  
+
+
+    print(tree.pretty_print())
+
 
 
 if __name__ == "__main__":

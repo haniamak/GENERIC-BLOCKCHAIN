@@ -46,8 +46,11 @@ class Entry:
 
 
 class EntryList:
-    def __init__(self) -> None:
-        self.entries: List[Entry] = []
+    def __init__(self, entries = None) -> None:
+        # self.entries: List[Entry] = [] 
+        if entries is None:
+            entries = []
+        self.entries: List[Entry] = entries
 
     def __str__(self) -> str:
         return f"EntryList, entries={self.entries}"

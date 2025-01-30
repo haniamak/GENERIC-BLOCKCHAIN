@@ -1,0 +1,25 @@
+2025-01-20 18:29:07 - Removed logs from previous usage
+2025-01-20 18:29:07 - 
+        Node list: 127.0.0.1:30002 online
+127.0.0.1:30003 online
+        User list: User(ID: 4, Key: klucz222)
+User(ID: 5, Key: klucz444)
+        List of blocks: 
+
+        
+2025-01-20 18:29:31 - 
+        Block list:
+        Blocks: 
+Branches: 
+
+        Entries list:
+        []
+        Node list:
+        127.0.0.1:30002 online
+127.0.0.1:30003 online
+        User list:
+        User(ID: 4, Key: klucz222)
+User(ID: 5, Key: klucz444)
+
+        Program finished
+        
