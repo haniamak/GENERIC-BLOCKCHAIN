@@ -1,5 +1,6 @@
 from typing import List, Optional
 import json
+import hashlib
 import os
 
 
@@ -46,8 +47,8 @@ class Entry:
 
 
 class EntryList:
-    def __init__(self, entries = None) -> None:
-        # self.entries: List[Entry] = [] 
+    def __init__(self, entries=None) -> None:
+        # self.entries: List[Entry] = []
         if entries is None:
             entries = []
         self.entries: List[Entry] = entries
@@ -97,3 +98,9 @@ class EntryList:
                     self.add_entry(entry)
         except FileNotFoundError:
             return EntryList()
+
+    def hash(self):
+        string = ""
+        for entry in sorted(self.entries, key=lambda x: x.entry_id):
+            string += str(entry.entry_id)
+        return hashlib.sha256(string.encode()).hexdigest()
