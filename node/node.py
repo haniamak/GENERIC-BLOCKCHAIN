@@ -451,8 +451,8 @@ User list: {user_list}
             user_list.to_file("users/users.json")
 
         log_text = f'''
-Block list:
-{block_list.pretty_print()}
+Block Tree:
+{block_list.tree.pretty_print()}
 Entries list:
 {os.listdir("entries")}
 Node list:

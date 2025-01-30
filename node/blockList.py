@@ -66,9 +66,6 @@ class BlockList:
             print(longest_path)
             self.block_list = longest_path
 
-
-
-
     def save(self, path="blocks/") -> None:
         for block in self.block_list:
             data = []
@@ -77,7 +74,6 @@ class BlockList:
             file_path = os.path.join(path, filename)
             with open(file_path, "w") as file:
                 json.dump(data, file)
-
 
     def load(self, path="blocks/"):
         files = os.listdir(path)
@@ -93,7 +89,7 @@ class BlockList:
                         list_of_entries.add_entry(Entry(
                             entry["entry_id"], entry["author_id"], entry["data"], entry["previous_entries"], entry["encryption_key"]))
                     block = Block(list_of_entries=list_of_entries,
-                                prev_block=prev.hash() if prev else None)
+                                  prev_block=prev.hash() if prev else None)
 
                     if len(self.block_list) != 0:
                         self.block_list[-1].next_block = block.hash()
@@ -122,7 +118,6 @@ class BlockList:
             return None
 
         return self.block_list[-1]
-
 
     def last_hash(self):
         last = self.last_block()
@@ -158,6 +153,7 @@ class TreeNode:
     def __str__(self):
         return f"TreeNode(block={self.block.hash()})"
 
+
 class Tree:
     def __init__(self, root: Optional[TreeNode] = None):
         self.root = root
@@ -171,7 +167,8 @@ class Tree:
         else:
             try:
                 tree_block_parent = self.all_nodes[tree_block.block.prev_block]
-                self.all_nodes[tree_block_parent.hash()].children.append(tree_block)
+                self.all_nodes[tree_block_parent.hash()].children.append(
+                    tree_block)
                 self.all_nodes[tree_block.hash()] = tree_block
             except KeyError:
                 print("Invalid Block - no parent in tree")
@@ -196,4 +193,13 @@ class Tree:
         for i, block in enumerate(path):
             print(f"{i}: {block.hash()}")
 
+    def pretty_print(self):
+        def rec(tree_block, level):
+            if tree_block is None:
+                return ""
+            str = "  " * level + f"{tree_block.hash()}\n"
+            for child in tree_block.children:
+                str += rec(child, level + 1)
+            return str
 
+        return rec(self.root, 0)
