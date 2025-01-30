@@ -47,7 +47,7 @@ def send_latest_block_to_neighbors(node_list, latest_block):
                 new_log(log_text)
 
             except Exception as e:
-                log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
+                log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}\n {e}"
                 print(log_text)
                 new_log(log_text)
 
@@ -132,11 +132,17 @@ def new_log(text):
 def receive_file(data, addr, block_list):
     try:
         # Ensure we've received data properly
-        if not data or len(data) == 0:
-            print(f"No data received from {addr}")
-            return
+        # if not data or len(data) == 0:
+        #     print(f"No data received from {addr}")
+        #     return
 
-        message = data.decode()
+        try:
+            message = data.decode()
+        except Exception as e:
+            log_text = f"Error decoding data from {addr}: {e}"
+            print(log_text)
+            new_log(log_text)
+            return
 
         # Check the type of received message, currently only supports ENTRY and BLOCK
         if message.startswith("ENTRY:"):
@@ -174,19 +180,28 @@ def receive_file(data, addr, block_list):
             new_log(log_text)
 
         elif message.startswith("BLOCK:"):
-            block_data = message[message.find(":", message.find(":")+1):]
+            # new_log("Received block")
+            block_data = message[message.find(":", message.find(":")+1)+1:]
+            # new_log(f"Block data: {block_data}")
             block_dict = json.loads(block_data)
-            block = blockList.Block.from_dict(block_dict)
+            block = blockList.Block()
+            block.from_dict(block_dict)
             if block_list.add_block(block):
-                log_text = f"Received block with entries: {[x.entry_id for x in block.list_of_entries.entries]} \n"
+                log_text = f"Received block of hash {block.hash()} child of {block.prev_block}\n"
                 print(log_text)
                 new_log(log_text)
             else:
-                log_text = f"Received INVALID block with entries: {[x.entry_id for x in block.list_of_entries.entries]} \n"
+                log_text = f"Received INVALID block of hash {block.hash()} child of {block.prev_block}\n"
                 print(log_text)
                 new_log(log_text)
 
+        else:
+            log_text = f"Received unknown message: {message}"
+            print(log_text)
+            new_log(log_text)
+
     except Exception as e:
+
         log_text = f"Error during file reception: {e}"
         print(log_text)
         new_log(log_text)
@@ -315,7 +330,10 @@ def listen(node_list, block_list):
                 node_list.set_online(addr[0], addr[1], True)
                 print(f"Sent pong to {addr[0]}:{addr[1]}")
             elif data.startswith(b"ENTRY:") or data.startswith(b"BLOCK:"):
-                receive_file(data, addr, block_list)
+                datacopy = data[:]
+                receive_file(datacopy, addr, block_list)
+            else:
+                print(f"Received unknown message: {data}")
         except socket.timeout:
             break
         except Exception as e:
