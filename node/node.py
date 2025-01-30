@@ -27,28 +27,28 @@ entries_directory = "entries/"
 
 
 def send_latest_block_to_neighbors(node_list, latest_block):
-        for node in node_list.nodes:
-            if node.online:
-                try:
-                    server_socket = socket.socket(
-                        socket.AF_INET, socket.SOCK_STREAM)
-                    server_socket.connect((node.ip, int(node.port)))
+    for node in node_list.nodes:
+        if node.online:
+            try:
+                server_socket = socket.socket(
+                    socket.AF_INET, socket.SOCK_STREAM)
+                server_socket.connect((node.ip, int(node.port)))
 
-                    block_data = json.dumps(latest_block.to_dict()).encode()
-                    message = f"BLOCK:{len(block_data)}:".encode() + block_data
+                block_data = json.dumps(latest_block.to_dict()).encode()
+                message = f"BLOCK:{len(block_data)}:".encode() + block_data
 
-                    server_socket.send(message)
-                    server_socket.close()
-                    node.send_block = False
+                server_socket.send(message)
+                server_socket.close()
+                node.send_block = False
 
-                    log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
-                    print(log_text)
-                    new_log(log_text)
+                log_text = f"Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
+                print(log_text)
+                new_log(log_text)
 
-                except Exception as e:
-                    log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
-                    print(log_text)
-                    new_log(log_text)
+            except Exception as e:
+                log_text = f"FAILED: Sent block {[x.entry_id for x in latest_block.list_of_entries.entries]} to {node.ip}:{node.port}"
+                print(log_text)
+                new_log(log_text)
 
 
 def send_entry(node, uuid_str, author_id, file_path):
@@ -115,7 +115,9 @@ def create_block(block_list):
     print(log_text)
     new_log(log_text)
 
-    block_list.save()
+    if not temporary_dir:
+        block_list.save()
+
     return block
 
 
@@ -399,9 +401,9 @@ def main():
     block_list = blockList.BlockList().load()
 
     start_settigs = f'''
-        Node list: {node_list}
-        User list: {user_list}
-        {block_list}
+Node list: {node_list}
+User list: {user_list}
+{block_list}
         '''
     print(start_settigs)
     new_log(start_settigs)
@@ -449,16 +451,16 @@ def main():
             user_list.to_file("users/users.json")
 
         log_text = f'''
-            Block list:
-            {block_list.pretty_print()}
-            Entries list:
-            {os.listdir("entries")}
-            Node list:
-            {node_list}
-            User list:
-            {user_list}
+Block list:
+{block_list.pretty_print()}
+Entries list:
+{os.listdir("entries")}
+Node list:
+{node_list}
+User list:
+{user_list}
 
-            Program finished
+Program finished
         '''
         print(log_text)
         new_log(log_text)
@@ -487,7 +489,6 @@ def main():
     # block_list = blockList.BlockList([block1, block2, block3, block4, block5, block6])
     #
     # print(block_list)
-
 
 
 if __name__ == "__main__":
