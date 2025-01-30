@@ -377,7 +377,7 @@ def fake_ping(node_list):
 
 
 def on_exit():
-    # do cleanup
+    # Do cleanup.
     global running
     running = False
     print("Exiting program")
@@ -397,13 +397,13 @@ def main():
     user_list = userList.UserList()
     user_list.from_file("users/users.json")
 
-    entry_list = entryList.EntryList()
-    block_list = blockList.BlockList().load()
+    block_list = blockList.BlockList()
+    block_list.from_file()
 
     start_settigs = f'''
-Node list: {node_list}
-User list: {user_list}
-{block_list}
+        Node list: {node_list}
+        User list: {user_list}
+        {block_list}
         '''
     print(start_settigs)
     new_log(start_settigs)
@@ -411,13 +411,8 @@ User list: {user_list}
     print("Configuration finished")
     print("Starting loop, send SIGINT to stop (Ctrl+C)")
 
-   # send_signal_to_neighbors(server_socket, node_list, "START")
-
     for node in node_list:
         node_list.set_online(node.ip, node.port, False)
-
-    sampling_time = 2
-    last_time = time.time()
 
     try:
         while running:
@@ -451,45 +446,20 @@ User list: {user_list}
             user_list.to_file("users/users.json")
 
         log_text = f'''
-Block Tree:
-{block_list.tree.pretty_print()}
-Entries list:
-{os.listdir("entries")}
-Node list:
-{node_list}
-User list:
-{user_list}
+            Block Tree:
+            {block_list.tree.pretty_print()}
+            Entries list:
+            {os.listdir("entries")}
+            Node list:
+            {node_list}
+            User list:
+            {user_list}
 
-Program finished
+            Program finished
         '''
+
         print(log_text)
         new_log(log_text)
-
-    # entry1 = Entry(entry_id="1", author_id="A", data="Entry 1", previous_entries=[], encryption_key="key1")
-    # entry2 = Entry(entry_id="2", author_id="B", data="Entry 2", previous_entries=["1"], encryption_key="key2")
-    # entry3 = Entry(entry_id="3", author_id="C", data="Entry 3", previous_entries=["2"], encryption_key="key3")
-    # entry4 = Entry(entry_id="4", author_id="D", data="Entry 4", previous_entries=["2"], encryption_key="key4")
-    # entry5 = Entry(entry_id="5", author_id="E", data="Entry 5", previous_entries=["2"], encryption_key="key5")
-    # entry6 = Entry(entry_id="6", author_id="F", data="Entry 6", previous_entries=["2"], encryption_key="key6")
-    #
-    # entry_list1 = EntryList([entry1])
-    # entry_list2 = EntryList([entry2])
-    # entry_list3 = EntryList([entry3])
-    # entry_list4 = EntryList([entry4])
-    # entry_list5 = EntryList([entry5])
-    # entry_list6 = EntryList([entry6])
-    #
-    # block1 = Block(entry_list1)
-    # block2 = Block(entry_list2, prev_block=block1.hash())
-    # block3 = Block(entry_list3, prev_block=block2.hash())
-    # block4 = Block(entry_list4, prev_block=block2.hash())
-    # block5 = Block(entry_list5, prev_block=block3.hash())
-    # block6 = Block(entry_list6, prev_block=block3.hash())
-    #
-    # block_list = blockList.BlockList([block1, block2, block3, block4, block5, block6])
-    #
-    # print(block_list)
-
 
 if __name__ == "__main__":
     main()
