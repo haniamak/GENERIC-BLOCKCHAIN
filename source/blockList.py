@@ -61,11 +61,13 @@ class BlockList:
         if self.is_empty():
             self.block_list.append(block)
             self.tree.add_block(tree_node)
+            return True
         else:
-            self.tree.add_block(tree_node)
+            added = self.tree.add_block(tree_node)
             longest_path = self.tree.longest_path()
             print(longest_path)
             self.block_list = longest_path
+            return added
 
     def save(self, path="blocks/") -> None:
         for block in self.block_list:
@@ -164,15 +166,21 @@ class Tree:
         if not self.root:
             self.root = tree_block
             self.all_nodes[tree_block.hash()] = tree_block
+            return True
 
         else:
+            if tree_block.block.hash() in self.all_nodes:
+                return True
+
             try:
                 tree_block_parent = self.all_nodes[tree_block.block.prev_block]
                 self.all_nodes[tree_block_parent.hash()].children.append(
                     tree_block)
                 self.all_nodes[tree_block.hash()] = tree_block
+                return True
             except KeyError:
                 print("Invalid Block - no parent in tree")
+                return False
 
     def longest_path(self):
         def rec(current_path, tree_block):
@@ -199,7 +207,7 @@ class Tree:
             if tree_block is None:
                 return ""
             str = "  " * level + f"{tree_block.hash()}\n"
-            for child in tree_block.children:
+            for child in sorted(tree_block.children, key=lambda x: x.block.hash()):
                 str += rec(child, level + 1)
             return str
 

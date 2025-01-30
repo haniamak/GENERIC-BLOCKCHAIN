@@ -464,21 +464,23 @@ def main():
             node_list.to_file("nodes/nodes.json")
             user_list.to_file("users/users.json")
 
+# To musi być od początku lini bo inaczej wyprintuje się krzywo
         log_text = f'''
-            Block Tree:
-            {block_list.tree.pretty_print()}
-            Entries list:
-            {os.listdir("entries")}
-            Node list:
-            {node_list}
-            User list:
-            {user_list}
+Block Tree:
+{block_list.tree.pretty_print()}
+Entries list:
+{os.listdir("entries")}
+Node list:
+{node_list}
+User list:
+{user_list}
 
-            Program finished
+Program finished
         '''
 
         print(log_text)
         new_log(log_text)
+
 
 if __name__ == "__main__":
     main()
