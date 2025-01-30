@@ -1,9 +1,0 @@
-2025-01-20 18:18:56 - 
-        Node list: 127.0.0.1:30001 online
-        User list: User(ID: 4, Key: klucz222)
-User(ID: 5, Key: klucz444)
-        List of blocks: 
-Block data: [{'entry_id': 1, 'author_id': 2, 'data': '12', 'previous_entries': [], 'encryption_key': None}, {'entry_id': 2, 'author_id': 2, 'data': '13', 'previous_entries': [], 'encryption_key': None}]
-Block data: [{'entry_id': 3, 'author_id': 3, 'data': '14', 'previous_entries': [], 'encryption_key': None}]
-
-        
